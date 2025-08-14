@@ -1,32 +1,38 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cadastro - FeedbackHub</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta - FeedbackHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./main/style.css">
 </head>
-<body class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-  <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-    <h1 class="text-2xl font-bold mb-6 text-center text-indigo-800">Criar conta</h1>
-    <form id="registration-form">
-      <label class="block mb-2 text-gray-700" for="name">Nome</label>
-      <input type="text" id="name" class="w-full p-2 border rounded mb-4 focus:ring-2 focus:ring-indigo-500" required>
-
-      <label class="block mb-2 text-gray-700" for="email">Email</label>
-      <input type="email" id="email" class="w-full p-2 border rounded mb-4 focus:ring-2 focus:ring-indigo-500" required>
-
-      <label class="block mb-2 text-gray-700" for="password">Senha</label>
-      <input type="password" id="password" class="w-full p-2 border rounded mb-6 focus:ring-2 focus:ring-indigo-500" required>
-
-      <button class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">Cadastrar</button>
-    </form>
-    <div class="text-center mt-4 text-sm">
-      <a href="index.html" class="text-indigo-600 hover:text-indigo-700">Já tenho conta</a>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Criar conta</h2>
+        <form id="registration-form" novalidate>
+            <div class="mb-4">
+                <label for="nome" class="block text-gray-700 text-sm font-bold mb-2">Nome</label>
+                <input type="text" id="nome" name="nome" placeholder="Digite seu nome completo" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                <input type="email" id="email" name="email" placeholder="exemplo@email.com" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="mb-6">
+                <label for="senha" class="block text-gray-700 text-sm font-bold mb-2">Senha</label>
+                <input type="password" id="senha" name="senha" placeholder="••••••••••" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required>
+            </div>
+            <div class="flex items-center justify-between">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
+                    Cadastrar
+                </button>
+            </div>
+            <p class="text-center text-gray-500 text-xs mt-6">
+                Já tem uma conta? <a href="index.html" class="text-indigo-600 hover:text-indigo-800">Faça login</a>.
+            </p>
+        </form>
     </div>
-  </div>
-
-  <script src="main/main.js"></script>
+    <script src="./main/main.js"></script>
 </body>
 </html>
-

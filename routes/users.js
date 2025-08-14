@@ -70,7 +70,7 @@ router.get('/', requirePermission(['ADMIN']), async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
-  if (req.user.role !== 'ADMIN' && req.user.userId !== id) {
+  if (req.user.perfil !== 'ADMIN' && req.user.userId !== id) {
       return res.status(403).json({ error: 'Acesso negado.' });
   }
 

@@ -16,7 +16,8 @@ const reportsRoutes = require('./routes/reports');
 const app = express();
 
 // Middlewares essenciais
-app.use(cors()); // Habilita CORS para todas as origens
+// Configuração de CORS para depuração - reflete a origem
+app.use(cors({ origin: true, credentials: true }));
 app.use(helmet()); // Adiciona cabeçalhos de segurança
 app.use(compression()); // Comprime as respostas
 app.use(express.json()); // Habilita o parsing de JSON no corpo das requisições
