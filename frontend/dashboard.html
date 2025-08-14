@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - FeedbackHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <!-- Top bar (mobile) -->
+  <div class="md:hidden flex items-center justify-between px-4 py-3 bg-white shadow">
+    <div class="text-xl font-bold text-indigo-800">FeedbackHub</div>
+    <button onclick="toggleSidebar()" class="p-2 rounded border border-gray-300">Menu</button>
+  </div>
+  
+  <!-- Overlay para mobile -->
+  <div id="overlay" class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleSidebar()"></div>
+  
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="bg-indigo-800 text-white w-64 px-4 py-6 md:block fixed md:relative inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+      <h1 class="text-2xl font-bold mb-8"><span class="text-indigo-200">Feedback</span>Hub</h1>
+      <nav class="space-y-2">
+        <a href="dashboard.html" class="block px-4 py-2 bg-indigo-900 rounded">Dashboard</a>
+        <a href="team.html" class="block px-4 py-2 hover:bg-indigo-700 rounded">Minha Equipe</a>
+        <a href="reports.html" class="block px-4 py-2 hover:bg-indigo-700 rounded">Relatórios</a>
+        <a href="settings.html" class="block px-4 py-2 hover:bg-indigo-700 rounded">Configurações</a>
+        <a href="profile.html" class="block px-4 py-2 hover:bg-indigo-700 rounded">Meu Perfil</a>
+        <a href="admin.html" class="block px-4 py-2 hover:bg-indigo-700 rounded">Administração</a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-6">
+      <!-- Header com informações do usuário -->
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+        <div class="flex items-center space-x-4">
+          <div class="text-right">
+            <p class="text-sm text-gray-600" id="userInfo">Carregando...</p>
+            <p class="text-xs text-gray-500" id="userRole">Carregando...</p>
+          </div>
+          <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
+            Sair
+          </button>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-indigo-500">
+          <p class="text-gray-500">Feedbacks Pendentes</p>
+          <h3 class="text-2xl font-bold">4</h3>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+          <p class="text-gray-500">Média de Avaliação</p>
+          <h3 class="text-2xl font-bold">8.2</h3>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
+          <p class="text-gray-500">Colaboradores</p>
+          <h3 class="text-2xl font-bold">12</h3>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="font-semibold mb-4">Desempenho por Competência</h3>
+          <canvas id="skillsChart"></canvas>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <h3 class="font-semibold mb-4">Evolução dos Feedbacks</h3>
+          <canvas id="evolutionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const skillsChart = new Chart(document.getElementById('skillsChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Comunicação', 'Produtividade', 'Qualidade'],
+        datasets: [{ label: 'Nota Média', data: [8, 7.5, 9], backgroundColor: '#6366F1' }]
+      }
+    });
+
+    const evolutionChart = new Chart(document.getElementById('evolutionChart'), {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
+        datasets: [{ label: 'Feedbacks', data: [3, 5, 4, 6, 8], borderColor: '#22C55E', fill: false }]
+      }
+    });
+  </script>
+  <script src="main/main.js"></script>
+</body>
+</html>

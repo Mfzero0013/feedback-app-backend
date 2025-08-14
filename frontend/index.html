@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - FeedbackHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+  <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-center text-indigo-800">FeedbackHub</h1>
+    
+    <!-- Informações dos Perfis -->
+    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+      <p class="text-sm text-gray-600 mb-2">Perfis disponíveis para teste:</p>
+      <div class="space-y-1 text-xs">
+        <div><strong>admin@empresa.com</strong> - Acesso total (Administrador)</div>
+        <div><strong>gestor@empresa.com</strong> - Gerenciar equipe (Gestor)</div>
+        <div><strong>usuario@empresa.com</strong> - Acesso básico (Usuário)</div>
+      </div>
+    </div>
+    
+    <form onsubmit="login(event)">
+      <label class="block mb-2 text-gray-700">Email</label>
+      <input type="email" class="w-full p-2 border rounded mb-4 focus:ring-2 focus:ring-indigo-500" required>
+      
+      <label class="block mb-2 text-gray-700">Senha</label>
+      <input type="password" class="w-full p-2 border rounded mb-6 focus:ring-2 focus:ring-indigo-500" required>
+      
+      <button class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">Entrar</button>
+    </form>
+
+    <div class="flex items-center justify-between mt-4 text-sm">
+      <a href="cadastro.html" class="text-indigo-600 hover:text-indigo-700">Criar conta</a>
+      <a href="recuperar.html" class="text-indigo-600 hover:text-indigo-700">Esqueci minha senha</a>
+    </div>
+  </div>
+  <script src="main/main.js"></script>
+</body>
+</html>
