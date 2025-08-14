@@ -1,4 +1,185 @@
-// Este listener principal garante que todo o código que manipula o DOM só rode depois que a página estiver pronta.
+// =================================================================
+// CONFIGURAÇÃO PRINCIPAL DA API
+// =================================================================
+const API_BASE_URL = 'https://feedback-app-backend-x87n.onrender.com';
+
+// =================================================================
+// FUNÇÕES DE AUTENTICAÇÃO
+// =================================================================
+
+function getToken() {
+    return localStorage.getItem('authToken');
+}
+
+function getUser() {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+}
+
+function logout() {
+    if (confirm('Tem certeza que deseja sair?')) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = 'index.html';
+    }
+}
+
+// Verifica se o usuário está logado e redireciona se necessário
+function protectPage() {
+    const publicPages = ['/index.html', '/cadastro.html', '/recuperar.html'];
+    const currentPage = window.location.pathname;
+
+    if (!publicPages.includes(currentPage) && !getToken()) {
+        console.log('Usuário não autenticado, redirecionando para o login.');
+        window.location.href = 'index.html';
+    }
+}
+
+// =================================================================
+// LISTENER PRINCIPAL - Executa quando o HTML está pronto
+// =================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    protectPage(); // Protege a página ao carregar
+
+    // Lógica para o formulário de CADASTRO (cadastro.html)
+    const registrationForm = document.getElementById('registration-form');
+    if (registrationForm) {
+        registrationForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const perfil = 'USUARIO';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, senha, perfil }),
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Cadastro realizado com sucesso! Redirecionando para o login.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else {
+                    showNotification(`Erro no cadastro: ${result.error || 'Ocorreu um problema.'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao tentar se cadastrar:', error);
+                showNotification('Não foi possível conectar ao servidor.', 'error');
+            }
+        });
+    }
+
+    // Lógica para o formulário de LOGIN (index.html)
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('authToken', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    showNotification('Login bem-sucedido! Redirecionando...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                } else {
+                    showNotification(`Erro no login: ${result.error || 'Credenciais inválidas.'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao tentar fazer login:', error);
+                showNotification('Não foi possível conectar ao servidor.', 'error');
+            }
+        });
+    }
+
+    applyPermissions();
+});
+
+// =================================================================
+// FUNÇÕES AUXILIARES
+// =================================================================
+
+// Sistema de Perfis e Permissões (baseado no usuário logado)
+function checkPermission(requiredProfile) {
+    const user = getUser();
+    if (!user) return false;
+    if (user.perfil === 'ADMIN') return true; // Admin pode tudo
+    return user.perfil === requiredProfile;
+}
+
+function applyPermissions() {
+    const adminLink = document.querySelector('a[href="admin.html"]');
+    if (adminLink && !checkPermission('ADMIN')) {
+        adminLink.style.display = 'none';
+    }
+    // Adicionar outras regras de permissão aqui se necessário
+}
+
+// Navegação
+function novoFeedback() {
+    window.location.href = 'feedback.html';
+}
+
+function verDetalhes(id) {
+    window.location.href = `feedback.html?id=${id}`;
+}
+
+// Sistema de notificação (sem alterações)
+function showNotification(message, type = 'info') {
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+
+    const notification = document.createElement('div');
+    notification.className = `notification fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
+
+    let bgColor, textColor, icon;
+    switch(type) {
+        case 'success': bgColor = 'bg-green-500'; textColor = 'text-white'; icon = '✓'; break;
+        case 'error': bgColor = 'bg-red-500'; textColor = 'text-white'; icon = '✗'; break;
+        case 'warning': bgColor = 'bg-yellow-500'; textColor = 'text-white'; icon = '⚠'; break;
+        default: bgColor = 'bg-blue-500'; textColor = 'text-white'; icon = 'ℹ';
+    }
+
+    notification.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <span class="text-lg">${icon}</span>
+        <p class="${textColor}">${message}</p>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-white hover:text-gray-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+    `;
+    notification.classList.add(bgColor);
+    document.body.appendChild(notification);
+
+    setTimeout(() => { notification.classList.remove('translate-x-full'); }, 100);
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => { if (notification.parentElement) notification.remove(); }, 300);
+        }
+    }, 5000);
+}
 document.addEventListener("DOMContentLoaded", () => {
 
     // Marca o link de navegação da página atual como ativo
