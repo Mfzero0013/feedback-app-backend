@@ -44,15 +44,9 @@ app.get('/api/status', (req, res) => {
   res.send('FeedbackHub API is running!');
 });
 
-// A rota catch-all para o frontend DEVE ser a última
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'html', 'index.html'));
-});
-
 // Middleware de tratamento de erros (deve ser o último)
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
-
 
 const PORT = process.env.PORT || 5003;
 
