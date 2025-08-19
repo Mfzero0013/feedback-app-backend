@@ -18,6 +18,8 @@ const userRoutes = require('./routes/userRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
+const teamRoutes = require('./routes/teamRoutes');
+const feedbackTypeRoutes = require('./routes/feedbackTypeRoutes');
 
 const app = express();
 
@@ -51,6 +53,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', systemSettingsRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/feedback-types', feedbackTypeRoutes);
 
 // Rota de Health Check
 app.get('/health', (req, res) => {

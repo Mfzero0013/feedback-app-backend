@@ -1,20 +1,22 @@
 const jwt = require('jsonwebtoken');
+const AppError = require('../utils/AppError');
 
 // Middleware para autenticar o token JWT
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (token == null) {
-    return res.status(401).json({ error: 'Token não fornecido', code: 'TOKEN_MISSING' });
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
-  // O payload do JWT, gerado no login, contém { userId, perfil, ... }
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  if (!token) {
+    return next(new AppError('Você não está logado. Por favor, faça o login para obter acesso.', 401, 'UNAUTHENTICATED'));
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({ error: 'Token inválido ou expirado', code: 'TOKEN_INVALID' });
+      return next(new AppError('Token inválido ou expirado. Por favor, faça login novamente.', 403, 'TOKEN_INVALID'));
     }
-    req.user = user;
+    req.user = decoded;
     next();
   });
 };
@@ -27,7 +29,7 @@ const requirePermission = (requiredPermissions) => {
     }
 
     // CORREÇÃO CRÍTICA: Usa 'perfil' do usuário, que vem do token JWT
-    const userProfile = req.user.perfil;
+    const userProfile = req.user.cargo;
 
     if (!requiredPermissions.includes(userProfile)) {
       return res.status(403).json({ error: 'Acesso negado. Permissão insuficiente.', code: 'ACCESS_DENIED' });

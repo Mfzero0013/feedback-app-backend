@@ -1,111 +1,78 @@
 const express = require('express');
-const prisma = require('../src/lib/prisma');
-const { requirePermission } = require('../middleware/auth');
+const prisma = require('../config/database'); // Caminho corrigido
+const { authenticateToken, requirePermission } = require('../middleware/auth');
+const AppError = require('../utils/AppError');
 
 const router = express.Router();
 
-// GET /api/reports/dashboard - Estatísticas para o dashboard principal
-router.get('/dashboard', requirePermission('view_reports'), async (req, res) => {
+// Middleware de autenticação para todas as rotas de relatório
+router.use(authenticateToken);
+
+// GET /api/reports/general - Estatísticas gerais para o admin
+router.get('/general', requirePermission('ADMIN'), async (req, res, next) => {
   try {
     const totalUsers = await prisma.user.count();
-    const totalDepartments = await prisma.department.count();
+    const totalEquipes = await prisma.equipe.count(); // Modelo corrigido
     const totalFeedbacks = await prisma.feedback.count();
 
-    const feedbackByType = await prisma.feedback.groupBy({
-      by: ['tipo'],
-      _count: {
-        tipo: true
-      }
-    });
-
     const feedbackByStatus = await prisma.feedback.groupBy({
-        by: ['status'],
-        _count: {
-            status: true
-        }
+      by: ['status'],
+      _count: { status: true },
     });
 
-    res.json({
-      totalUsers,
-      totalDepartments,
-      totalFeedbacks,
-      feedbackByType: feedbackByType.map(item => ({ type: item.tipo, count: item._count.tipo })),
-      feedbackByStatus: feedbackByStatus.map(item => ({ status: item.status, count: item._count.status }))
+    res.status(200).json({
+      status: 'success',
+      data: {
+        totalUsers,
+        totalEquipes,
+        totalFeedbacks,
+        feedbackByStatus: feedbackByStatus.map(item => ({ status: item.status, count: item._count.status })),
+      },
     });
-
   } catch (error) {
-    console.error('Erro ao gerar relatório do dashboard:', error);
-    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+    next(new AppError('Erro ao gerar relatório geral.', 500));
   }
 });
 
-// GET /api/reports/feedbacks-by-department - Relatório de feedbacks por departamento
-router.get('/feedbacks-by-department', requirePermission('view_reports'), async (req, res) => {
-    try {
-        const feedbacksByDept = await prisma.department.findMany({
-            include: {
-                _count: {
-                    select: { feedbacks: true }
-                }
-            },
-            orderBy: {
-                nome: 'asc'
-            }
-        });
-
-        res.json(feedbacksByDept.map(dept => ({
-            departmentId: dept.id,
-            departmentName: dept.nome,
-            feedbackCount: dept._count.feedbacks
-        })));
-
-    } catch (error) {
-        console.error('Erro ao gerar relatório de feedbacks por departamento:', error);
-        res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
-    }
-});
-
 // GET /api/reports/user-engagement - Relatório de engajamento de usuários
-router.get('/user-engagement', requirePermission('view_reports'), async (req, res) => {
-    try {
-        const topReceivers = await prisma.user.findMany({
-            take: 10,
-            orderBy: {
-                feedbacksRecebidos: {
-                    _count: 'desc'
-                }
-            },
-            select: {
-                id: true,
-                nome: true,
-                _count: {
-                    select: { feedbacksRecebidos: true }
-                }
-            }
-        });
+router.get('/user-engagement', requirePermission('ADMIN'), async (req, res, next) => {
+  try {
+    const topReceivers = await prisma.user.findMany({
+      take: 10,
+      orderBy: {
+        RecebidosPeloUsuario: { _count: 'desc' }, // Relação corrigida
+      },
+      select: {
+        id: true,
+        nome: true,
+        _count: {
+          select: { RecebidosPeloUsuario: true },
+        },
+      },
+    });
 
-        const topSenders = await prisma.user.findMany({
-            take: 10,
-            orderBy: {
-                feedbacksEnviados: {
-                    _count: 'desc'
-                }
-            },
-            select: {
-                id: true,
-                nome: true,
-                _count: {
-                    select: { feedbacksEnviados: true }
-                }
-            }
-        });
+    const topSenders = await prisma.user.findMany({
+      take: 10,
+      orderBy: {
+        CriadosPeloUsuario: { _count: 'desc' }, // Relação corrigida
+      },
+      select: {
+        id: true,
+        nome: true,
+        _count: {
+          select: { CriadosPeloUsuario: true },
+        },
+      },
+    });
 
-        res.json({ topReceivers, topSenders });
+    res.status(200).json({
+        status: 'success',
+        data: { topReceivers, topSenders },
+    });
 
-    } catch (error) {
-        console.error('Erro ao gerar relatório de engajamento:', error);
-        res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
-    }
+  } catch (error) {
+    next(new AppError('Erro ao gerar relatório de engajamento.', 500));
+  }
 });
 
 module.exports = router;

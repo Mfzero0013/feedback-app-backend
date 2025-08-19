@@ -11,40 +11,22 @@ const teamSchema = Joi.object({
 });
 
 // GET /api/teams - Listar todos os departamentos
-router.get('/', requirePermission('view_teams'), async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
-    const offset = (page - 1) * limit;
-
-    const where = {
-      OR: [
-        { nome: { contains: search, mode: 'insensitive' } },
-        { descricao: { contains: search, mode: 'insensitive' } }
-      ]
-    };
-
+    // Versão robusta para garantir que apenas os dados necessários sejam enviados.
     const departments = await prisma.department.findMany({
-      where,
-      skip: offset,
-      take: parseInt(limit),
-      orderBy: { nome: 'asc' },
-      include: { _count: { select: { users: true } } }
-    });
-
-    const total = await prisma.department.count({ where });
-
-    res.json({
-      teams: departments.map(d => ({ ...d, members_count: d._count.users })),
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit)
+      select: {
+        id: true,
+        nome: true
+      },
+      orderBy: {
+        nome: 'asc'
       }
     });
+    res.json({ teams: departments });
   } catch (error) {
-    console.error('Erro ao listar departamentos:', error);
-    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+    console.error('Falha crítica ao buscar departamentos:', error);
+    res.status(500).json({ error: 'Não foi possível carregar os departamentos.', code: 'DEPARTMENT_FETCH_FAILED' });
   }
 });
 
@@ -125,6 +107,63 @@ router.delete('/:id', requirePermission('manage_teams'), auditLog('DELETE_TEAM',
       return res.status(404).json({ error: 'Departamento não encontrado', code: 'TEAM_NOT_FOUND' });
     }
     console.error('Erro ao remover departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+const memberSchema = Joi.object({
+  usuarioId: Joi.string().uuid().required(),
+  equipeId: Joi.string().uuid().required(),
+});
+
+const removeMemberSchema = Joi.object({
+    usuarioId: Joi.string().uuid().required(),
+});
+
+// POST /api/teams/add-member - Adicionar membro a um departamento
+router.post('/add-member', requirePermission('manage_teams'), auditLog('ADD_TEAM_MEMBER', 'users'), async (req, res) => {
+  try {
+    const { error, value } = memberSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: 'Dados inválidos', details: error.details.map(d => d.message) });
+    }
+    const { usuarioId, equipeId } = value;
+
+    const user = await prisma.user.update({
+      where: { id: usuarioId },
+      data: { departamentoId: equipeId }
+    });
+
+    res.status(200).json({ message: 'Membro adicionado com sucesso!', user });
+  } catch (error) {
+    if (error.code === 'P2025') {
+        return res.status(404).json({ error: 'Usuário ou departamento não encontrado', code: 'NOT_FOUND' });
+    }
+    console.error('Erro ao adicionar membro:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// POST /api/teams/remove-member - Remover membro de um departamento
+router.post('/remove-member', requirePermission('manage_teams'), auditLog('REMOVE_TEAM_MEMBER', 'users'), async (req, res) => {
+  try {
+    const { error, value } = removeMemberSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ error: 'Dados inválidos', details: error.details.map(d => d.message) });
+    }
+    const { usuarioId } = value;
+
+    const user = await prisma.user.update({
+      where: { id: usuarioId },
+      data: { departamentoId: null }
+    });
+
+    res.status(200).json({ message: 'Membro removido com sucesso!', user });
+  } catch (error) {
+    if (error.code === 'P2025') {
+        return res.status(404).json({ error: 'Usuário não encontrado', code: 'USER_NOT_FOUND' });
+    }
+    console.error('Erro ao remover membro:', error);
     res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
   }
 });

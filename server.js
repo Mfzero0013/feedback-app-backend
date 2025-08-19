@@ -5,35 +5,54 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const path = require('path');
 
 // Importa as rotas refatoradas
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
-const teamsRoutes = require('./routes/teams');
-const feedbackRoutes = require('./routes/feedback');
-const reportsRoutes = require('./routes/reports');
+const teamRoutes = require('./routes/team');
+const feedbackRoutes = require('./routes/feedbackRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 const app = express();
 
 // Middlewares essenciais
-// Configuração de CORS para depuração - reflete a origem
-app.use(cors({ origin: true, credentials: true }));
-app.use(helmet()); // Adiciona cabeçalhos de segurança
-app.use(compression()); // Comprime as respostas
-app.use(express.json()); // Habilita o parsing de JSON no corpo das requisições
-app.use(morgan('dev')); // Loga as requisições HTTP no console
+// Configuração de CORS para permitir todas as origens em desenvolvimento
+// Configuração de CORS para permitir o frontend
+app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.use(express.json());
+app.use(morgan('dev'));
 
-// Define as rotas da API
+// Servir arquivos estáticos do frontend
+app.use(express.static(path.join(__dirname, '..', 'html')));
+
+// Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
-app.use('/api/teams', teamsRoutes);
+app.use('/api/teams', teamRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/reports', reportsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
 
-// Rota de health check
-app.get('/', (req, res) => {
+// Rota para checar a saúde da API
+app.get('/api/status', (req, res) => {
   res.send('FeedbackHub API is running!');
 });
+
+// A rota catch-all para o frontend DEVE ser a última
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'html', 'index.html'));
+});
+
+// Middleware de tratamento de erros (deve ser o último)
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
+
 
 const PORT = process.env.PORT || 5003;
 
