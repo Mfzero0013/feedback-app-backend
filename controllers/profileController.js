@@ -19,7 +19,7 @@ exports.getMe = async (req, res, next) => {
         });
 
         if (!user) {
-            return next(new AppError('Usuário não encontrado.', 404));
+            return res.status(404).json({ error: { message: 'Usuário não encontrado.', code: 'USER_NOT_FOUND' } });
         }
 
         res.status(200).json({ status: 'success', data: user });
