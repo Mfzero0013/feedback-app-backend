@@ -16,7 +16,6 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 
-const path = require('path');
 const app = express();
 
 // Middlewares essenciais
