@@ -4,7 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const compression = require('compression');
 const path = require('path');
 
 // Importa as rotas refatoradas
@@ -23,7 +22,6 @@ const app = express();
 // Configuração de CORS para permitir o frontend
 app.use(cors());
 app.use(helmet());
-app.use(compression());
 app.use(express.json());
 app.use(morgan('dev'));
 
