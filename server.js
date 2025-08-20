@@ -30,7 +30,11 @@ const corsOptions = {
     optionsSuccessStatus: 200
 };
 
+app.use(helmet());
 app.use(cors(corsOptions));
+
+// Habilita a resposta para requisições OPTIONS (preflight)
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(morgan('dev'));
 
