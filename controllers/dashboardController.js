@@ -3,7 +3,7 @@ const AppError = require('../utils/AppError');
 
 exports.getDashboardStats = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     // 1. Contar feedbacks pendentes (status 'ABERTO')
     const feedbacksAbertos = await prisma.feedback.count({
