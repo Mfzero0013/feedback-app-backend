@@ -20,8 +20,12 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const app = express();
 
 // Middlewares essenciais
-app.use(cors());
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({
+    origin: 'https://feedback-app-frontend-imdf.onrender.com',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
