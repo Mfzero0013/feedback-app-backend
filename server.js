@@ -26,6 +26,9 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Habilita a resposta para requisições OPTIONS (preflight)
+app.options('*', cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
