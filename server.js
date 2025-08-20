@@ -31,7 +31,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
