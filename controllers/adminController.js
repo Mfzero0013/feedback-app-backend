@@ -40,6 +40,44 @@ exports.createUser = async (req, res, next) => {
 };
 
 // Atualizar um usuário
+// Obter todos os usuários
+exports.getAllUsers = async (req, res, next) => {
+    try {
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                nome: true,
+                email: true,
+                cargo: true,
+            },
+        });
+        res.status(200).json({ status: 'success', data: users });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Criar uma nova equipe
+exports.createTeam = async (req, res, next) => {
+    const { nome, descricao, gestorId } = req.body;
+    try {
+        const newTeam = await prisma.equipe.create({
+            data: {
+                nome,
+                descricao,
+                gestorId: gestorId || null,
+            },
+        });
+        res.status(201).json({ status: 'success', data: newTeam });
+    } catch (error) {
+        // Trata erro de nome de equipe duplicado
+        if (error.code === 'P2002' && error.meta?.target?.includes('nome')) {
+            return next(new AppError('Já existe uma equipe com este nome.', 409));
+        }
+        next(error);
+    }
+};
+
 exports.updateUser = async (req, res, next) => {
     const { id } = req.params;
     const { nome, email, cargo, jobTitle, equipeId, status } = req.body;
