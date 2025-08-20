@@ -1,0 +1,13 @@
+{
+  "name": "feedback-hub-frontend",
+  "version": "1.0.0",
+  "description": "Frontend assets for FeedbackHub",
+  "scripts": {
+    "build:css": "tailwindcss -i ./html/css/input.css -o ./html/css/output.css --watch",
+    "build:icon": "svg-to-ico --in html/images/logo.svg --out html/images"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "svg-to-ico": "^1.0.1"
+  }
+}
