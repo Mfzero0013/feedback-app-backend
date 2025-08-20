@@ -30,9 +30,13 @@ exports.getMyTeam = async (req, res, next) => {
         const teamData = await prisma.equipe.findUnique({
             where: { id: user.equipeId },
             include: {
-                usuarios: {
-                    include: {
-                        perfil: true
+                membros: {
+                    select: {
+                        id: true,
+                        nome: true,
+                        email: true,
+                        cargo: true,
+                        jobTitle: true
                     }
                 }
             }
@@ -42,22 +46,11 @@ exports.getMyTeam = async (req, res, next) => {
             return next(new AppError('Equipe não encontrada.', 404));
         }
 
-        // 3. Filtra e mapeia os membros da equipe de forma segura
-        const members = teamData.usuarios
-            .filter(user => user.perfil) // Garante que apenas usuários com perfil sejam processados
-            .map(user => ({
-                id: user.id,
-                nome: user.nome,
-                email: user.email,
-                cargo: user.perfil.cargo,
-                jobTitle: user.perfil.jobTitle
-            }));
-
         res.status(200).json({
             status: 'success',
             data: {
                 nome: teamData.nome,
-                usuarios: members
+                usuarios: teamData.membros
             }
         });
 
