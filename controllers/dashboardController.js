@@ -39,7 +39,7 @@ exports.getDashboardStats = async (req, res, next) => {
         where: {
           equipeId: user.equipeId,
           id: {
-            not: userId,
+            not: userId, // Excluir o próprio usuário da contagem
           },
         },
       });
