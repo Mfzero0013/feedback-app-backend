@@ -15,6 +15,7 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Rota para checar a saúde da API
 app.get('/api/status', (req, res) => {
