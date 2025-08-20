@@ -1,10 +1,9 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/database');
 
 // POST /api/feedback
 const createFeedback = async (req, res) => {
     // O autor é identificado pelo middleware de autenticação e adicionado ao req.user
-    const autorId = req.user.id;
+    const autorId = req.user.userId;
     const { titulo, conteudo, tipo, destinatarioId, anonimo } = req.body;
 
     if (!titulo || !conteudo || !tipo || !destinatarioId) {
