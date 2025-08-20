@@ -16,17 +16,16 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 
+const path = require('path');
 const app = express();
 
 // Middlewares essenciais
-// Configuração de CORS para permitir todas as origens em desenvolvimento
-// Configuração de CORS para permitir o frontend
 app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Servir arquivos estáticos do frontend
+// Servir arquivos estáticos do frontend (diretório 'html')
 app.use(express.static(path.join(__dirname, '..', 'html')));
 
 // Rotas da API
