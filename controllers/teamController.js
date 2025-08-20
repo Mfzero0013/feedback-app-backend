@@ -1,4 +1,4 @@
-const prisma = require('../config/database');
+const prisma = require('../prisma/prismaClient');
 const AppError = require('../utils/AppError');
 
 // Obter a equipe do usuário logado
