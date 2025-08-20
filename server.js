@@ -20,7 +20,25 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const app = express();
 
 // Middlewares essenciais
-app.use(cors());
+const allowedOrigins = [
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'https://feedback-app-frontend.onrender.com',
+    'https://feedback-app-frontend-imdf.onrender.com'
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
