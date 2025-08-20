@@ -1,17 +1,22 @@
-const prisma = require('../config/database');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
+const AppError = require('../utils/AppError');
 
 // Funções CRUD para Usuários
 
-// Listar todos os usuários com suas equipes
+// Listar todos os usuários
 exports.getAllUsers = async (req, res, next) => {
     try {
         const users = await prisma.user.findMany({
-            include: {
-                equipe: true, // Inclui dados da equipe
+            select: {
+                id: true,
+                nome: true,
+                email: true,
+                cargo: true,
             },
         });
-        res.json(users);
+        res.status(200).json({ status: 'success', data: users });
     } catch (error) {
         next(error);
     }
@@ -39,23 +44,6 @@ exports.createUser = async (req, res, next) => {
     }
 };
 
-// Atualizar um usuário
-// Obter todos os usuários
-exports.getAllUsers = async (req, res, next) => {
-    try {
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                nome: true,
-                email: true,
-                cargo: true,
-            },
-        });
-        res.status(200).json({ status: 'success', data: users });
-    } catch (error) {
-        next(error);
-    }
-};
 
 // Criar uma nova equipe
 exports.createTeam = async (req, res, next) => {
@@ -127,22 +115,6 @@ exports.getAllTeams = async (req, res, next) => {
     }
 };
 
-// Criar uma nova equipe
-exports.createTeam = async (req, res, next) => {
-    const { nome, descricao, gestorId } = req.body;
-    try {
-        const newTeam = await prisma.equipe.create({
-            data: {
-                nome,
-                descricao,
-                gestorId,
-            },
-        });
-        res.status(201).json(newTeam);
-    } catch (error) {
-        next(error);
-    }
-};
 
 // Atualizar uma equipe
 exports.updateTeam = async (req, res, next) => {
