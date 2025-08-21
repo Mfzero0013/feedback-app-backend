@@ -2,7 +2,6 @@ require('dotenv').config();
 
 console.log('--- SERVER STARTING - DEPLOY VERSION 7 ---');
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
