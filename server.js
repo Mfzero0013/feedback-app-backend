@@ -47,20 +47,6 @@ app.get('/api/status', (req, res) => {
   res.send('FeedbackHub API is running!');
 });
 
-// --- Configuração para Servir o Frontend ---
-
-// Define o caminho para a pasta de build do frontend
-const frontendPath = path.join(__dirname, '..', 'html');
-
-// Serve os arquivos estáticos do frontend
-app.use(express.static(frontendPath));
-
-// Rota catch-all: para qualquer outra requisição, serve o index.html
-// Isso é crucial para Single Page Applications (SPAs) como React, Vue, etc.
-app.get('*', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-});
-
 // Middleware de tratamento de erros (deve ser o último)
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
