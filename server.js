@@ -19,33 +19,21 @@ const reportsRoutes = require('./routes/reportsRoutes');
 
 const app = express();
 
-// Middlewares essenciais
-app.use(helmet());
-
-// Middleware manual para CORS
+// Middleware de CORS - deve ser o primeiro
 app.use((req, res, next) => {
-    const allowedOrigins = [
-        'http://localhost:8080',
-        'http://127.0.0.1:8080',
-        'https://feedback-app-frontend.onrender.com',
-        'https://feedback-app-frontend-jmdf.onrender.com'
-    ];
-    const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', true);
-
-    // Intercepta requisições OPTIONS
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Permite qualquer origem
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // Responde OK para requisições OPTIONS (pre-flight)
     if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
     }
-
     next();
 });
+
+// Outros middlewares
+app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
