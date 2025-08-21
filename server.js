@@ -21,7 +21,7 @@ const app = express();
 
 // Configuração do CORS
 const corsOptions = {
-    origin: 'https://feedback-app-frontend.onrender.com', // URL do seu frontend
+    origin: 'https://feedback-app-frontend-jmdf.onrender.com', // URL do seu frontend
     optionsSuccessStatus: 200 // Para navegadores legados
 };
 
