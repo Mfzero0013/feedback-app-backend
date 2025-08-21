@@ -20,23 +20,18 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const app = express();
 
 // Middlewares essenciais
-const corsOptions = {
+app.use(helmet());
+app.use(cors({
     origin: [
         'http://localhost:8080',
         'http://127.0.0.1:8080',
         'https://feedback-app-frontend.onrender.com',
-        'https://feedback-app-frontend-jmdf.onrender.com' // URL do novo frontend
+        'https://feedback-app-frontend-jmdf.onrender.com'
     ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: "Content-Type,Authorization",
-    optionsSuccessStatus: 200
-};
-
-app.use(helmet());
-app.use(cors(corsOptions));
-
-// Habilita a resposta para requisições OPTIONS (preflight)
-app.options('*', cors(corsOptions));
+    credentials: true,
+    allowedHeaders: "Content-Type, Authorization, X-Requested-With"
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
