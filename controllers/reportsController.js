@@ -4,9 +4,22 @@ const AppError = require('../utils/AppError');
 // Gerar relatório geral de feedbacks
 exports.getGeneralReport = async (req, res, next) => {
     try {
-        const totalFeedbacks = await prisma.feedback.count();
+        const { userId, feedbackType, startDate, endDate } = req.query;
+        const where = {};
+
+        if (userId) where.autorId = userId;
+        if (feedbackType) where.tipo = { nome: feedbackType };
+        if (startDate && endDate) {
+            where.createdAt = {
+                gte: new Date(startDate),
+                lte: new Date(endDate),
+            };
+        }
+
+        const totalFeedbacks = await prisma.feedback.count({ where });
         const feedbacksByStatus = await prisma.feedback.groupBy({
             by: ['status'],
+            where,
             _count: {
                 status: true,
             },
@@ -27,21 +40,37 @@ exports.getGeneralReport = async (req, res, next) => {
 // Gerar relatório de engajamento de usuários
 exports.getEngagementReport = async (req, res, next) => {
     try {
+        const { userId, startDate, endDate } = req.query;
+        const where = {};
+
+        if (userId) where.id = userId;
+
+        const feedbackWhere = {};
+        if (startDate && endDate) {
+            feedbackWhere.createdAt = {
+                gte: new Date(startDate),
+                lte: new Date(endDate),
+            };
+        }
+
         const userFeedbackCounts = await prisma.user.findMany({
+            where,
             select: {
                 id: true,
                 nome: true,
                 email: true,
                 _count: {
-                    select: { feedbacks: true },
+                    select: { 
+                        feedbacksCriados: { where: feedbackWhere } 
+                    },
                 },
             },
             orderBy: {
-                feedbacks: {
+                feedbacksCriados: {
                     _count: 'desc',
                 },
             },
-            take: 10, // Top 10 usuários mais engajados
+            take: 10,
         });
 
         res.status(200).json({ status: 'success', data: userFeedbackCounts });
