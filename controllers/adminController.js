@@ -8,11 +8,8 @@ const AppError = require('../utils/AppError');
 exports.getAllUsers = async (req, res, next) => {
     try {
         const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                nome: true,
-                email: true,
-                cargo: true,
+            include: {
+                equipe: true, // Inclui todos os dados da equipe relacionada
             },
         });
         res.status(200).json({ status: 'success', data: users });

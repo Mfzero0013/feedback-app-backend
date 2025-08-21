@@ -25,7 +25,7 @@ const corsOptions = {
         'http://localhost:8080',
         'http://127.0.0.1:8080',
         'https://feedback-app-frontend.onrender.com',
-        'https://feedback-app-frontend-imdf.onrender.com' // URL do novo frontend
+        'https://feedback-app-frontend-jmdf.onrender.com', // URL do novo frontend
     ],
     optionsSuccessStatus: 200
 };
