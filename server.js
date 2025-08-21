@@ -55,6 +55,11 @@ app.get('/api/status', (req, res) => {
   res.send('FeedbackHub API is running!');
 });
 
+// Rota raiz para exibir uma mensagem de status
+app.get('/', (req, res) => {
+  res.send('FeedbackHub API is running. Acesse o frontend para interagir com a aplicação.');
+});
+
 // Middleware de tratamento de erros (deve ser o último)
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
