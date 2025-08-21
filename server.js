@@ -1,10 +1,11 @@
 require('dotenv').config();
 
-console.log('--- SERVER STARTING - DEPLOY VERSION 7 ---');
+console.log('--- SERVER STARTING - DEPLOY VERSION 8 ---');
 const express = require('express');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const cors = require('cors'); // Importa o pacote cors
 
 // Importa as rotas refatoradas
 const authRoutes = require('./routes/auth');
@@ -18,18 +19,13 @@ const reportsRoutes = require('./routes/reportsRoutes');
 
 const app = express();
 
-// Middleware de CORS - deve ser o primeiro
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*'); // Permite qualquer origem
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    
-    // Responde OK para requisições OPTIONS (pre-flight)
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
+// Configuração do CORS
+const corsOptions = {
+    origin: 'https://feedback-app-frontend.onrender.com', // URL do seu frontend
+    optionsSuccessStatus: 200 // Para navegadores legados
+};
+
+app.use(cors(corsOptions));
 
 // Outros middlewares
 app.use(helmet());
