@@ -1,4 +1,4 @@
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../lib/prisma');
 const AppError = require('../utils/AppError');
 
 // Gerar relatório geral de feedbacks
@@ -19,7 +19,8 @@ exports.getGeneralReport = async (req, res, next) => {
 
         res.status(200).json({ status: 'success', data: report });
     } catch (error) {
-        next(new AppError('Erro ao gerar o relatório geral.', 500));
+        console.error('Error in getGeneralReport:', error);
+        next(error);
     }
 };
 
@@ -45,6 +46,7 @@ exports.getEngagementReport = async (req, res, next) => {
 
         res.status(200).json({ status: 'success', data: userFeedbackCounts });
     } catch (error) {
-        next(new AppError('Erro ao gerar o relatório de engajamento.', 500));
+        console.error('Error in getEngagementReport:', error);
+        next(error);
     }
 };

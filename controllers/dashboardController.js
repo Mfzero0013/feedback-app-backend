@@ -1,4 +1,4 @@
-const prisma = require('../config/database');
+const prisma = require('../lib/prisma');
 const AppError = require('../utils/AppError');
 
 exports.getDashboardStats = async (req, res, next) => {
@@ -54,6 +54,7 @@ exports.getDashboardStats = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(new AppError('Não foi possível buscar as estatísticas do dashboard.', 500));
+    console.error('Error in getDashboardStats:', error);
+    next(error);
   }
 };

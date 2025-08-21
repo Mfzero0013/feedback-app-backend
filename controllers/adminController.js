@@ -1,4 +1,4 @@
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/AppError');
 
@@ -14,6 +14,7 @@ exports.getAllUsers = async (req, res, next) => {
         });
         res.status(200).json({ status: 'success', data: users });
     } catch (error) {
+        console.error('Error in getAllUsers:', error);
         next(error);
     }
 };
@@ -36,6 +37,7 @@ exports.createUser = async (req, res, next) => {
         });
         res.status(201).json(newUser);
     } catch (error) {
+        console.error('Error in createUser:', error);
         next(error);
     }
 };
@@ -58,6 +60,7 @@ exports.createTeam = async (req, res, next) => {
         if (error.code === 'P2002' && error.meta?.target?.includes('nome')) {
             return next(new AppError('Já existe uma equipe com este nome.', 409));
         }
+        console.error('Error in createTeam:', error);
         next(error);
     }
 };
@@ -67,7 +70,7 @@ exports.updateUser = async (req, res, next) => {
     const { nome, email, cargo, jobTitle, equipeId, status } = req.body;
     try {
         const updatedUser = await prisma.user.update({
-            where: { id },
+            where: { id: parseInt(id, 10) },
             data: {
                 nome,
                 email,
@@ -79,6 +82,7 @@ exports.updateUser = async (req, res, next) => {
         });
         res.json(updatedUser);
     } catch (error) {
+        console.error('Error in updateUser:', error);
         next(error);
     }
 };
@@ -87,9 +91,10 @@ exports.updateUser = async (req, res, next) => {
 exports.deleteUser = async (req, res, next) => {
     const { id } = req.params;
     try {
-        await prisma.user.delete({ where: { id } });
+        await prisma.user.delete({ where: { id: parseInt(id, 10) } });
         res.status(204).send();
     } catch (error) {
+        console.error('Error in deleteUser:', error);
         next(error);
     }
 };
@@ -107,6 +112,7 @@ exports.getAllTeams = async (req, res, next) => {
         });
         res.json(teams);
     } catch (error) {
+        console.error('Error in getAllTeams:', error);
         next(error);
     }
 };
@@ -118,7 +124,7 @@ exports.updateTeam = async (req, res, next) => {
     const { nome, descricao, gestorId } = req.body;
     try {
         const updatedTeam = await prisma.equipe.update({
-            where: { id },
+            where: { id: parseInt(id, 10) },
             data: {
                 nome,
                 descricao,
@@ -127,6 +133,7 @@ exports.updateTeam = async (req, res, next) => {
         });
         res.json(updatedTeam);
     } catch (error) {
+        console.error('Error in updateTeam:', error);
         next(error);
     }
 };
@@ -137,12 +144,13 @@ exports.deleteTeam = async (req, res, next) => {
     try {
         // Desvincular usuários antes de deletar a equipe
         await prisma.user.updateMany({
-            where: { equipeId: id },
+            where: { equipeId: parseInt(id, 10) },
             data: { equipeId: null },
         });
-        await prisma.equipe.delete({ where: { id } });
+        await prisma.equipe.delete({ where: { id: parseInt(id, 10) } });
         res.status(204).send();
     } catch (error) {
+        console.error('Error in deleteTeam:', error);
         next(error);
     }
 };

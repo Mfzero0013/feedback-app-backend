@@ -1,11 +1,10 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const AppError = require('../utils/AppError');
 
 // Obter os dados do usuário logado (perfil)
 exports.getMe = async (req, res, next) => {
     try {
-        // CORREÇÃO: O ID do usuário no token é 'userId', não 'id'.
+        // O ID do usuário no token é 'userId'
         const userId = req.user.userId;
         if (!userId) {
             return next(new AppError('ID do usuário não encontrado no token.', 400));
@@ -19,12 +18,13 @@ exports.getMe = async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(404).json({ error: { message: 'Usuário não encontrado.', code: 'USER_NOT_FOUND' } });
+            return next(new AppError('Usuário não encontrado.', 404, 'USER_NOT_FOUND'));
         }
 
         res.status(200).json({ status: 'success', data: user });
 
     } catch (error) {
+        console.error('Error in getMe:', error);
         next(error);
     }
 };
@@ -51,6 +51,7 @@ exports.updateMe = async (req, res, next) => {
         });
 
     } catch (error) {
+        console.error('Error in updateMe:', error);
         next(error);
     }
 };

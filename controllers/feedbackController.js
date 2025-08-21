@@ -1,4 +1,5 @@
-const prisma = require('../config/database');
+const prisma = require('../lib/prisma');
+const AppError = require('../utils/AppError');
 
 // POST /api/feedback
 const createFeedback = async (req, res) => {
@@ -7,7 +8,7 @@ const createFeedback = async (req, res) => {
     const { titulo, conteudo, tipo, destinatarioId, anonimo } = req.body;
 
     if (!titulo || !conteudo || !tipo || !destinatarioId) {
-        return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
+        return next(new AppError('Todos os campos obrigatórios devem ser preenchidos.', 400));
     }
 
     try {
@@ -19,12 +20,12 @@ const createFeedback = async (req, res) => {
         if (!feedbackType) {
             // Se o tipo não existir, podemos criá-lo ou retornar um erro.
             // Por segurança, vamos retornar um erro.
-            return res.status(400).json({ message: `Tipo de feedback inválido: ${tipo}` });
+            return next(new AppError(`Tipo de feedback inválido: ${tipo}`, 400));
         }
 
         const destinatario = await prisma.user.findUnique({ where: { id: destinatarioId } });
         if (!destinatario) {
-            return res.status(404).json({ message: 'Usuário destinatário não encontrado.' });
+            return next(new AppError('Usuário destinatário não encontrado.', 404));
         }
 
         const newFeedback = await prisma.feedback.create({
@@ -41,8 +42,8 @@ const createFeedback = async (req, res) => {
 
         res.status(201).json({ message: 'Feedback criado com sucesso!', data: newFeedback });
     } catch (error) {
-        console.error('Erro ao criar feedback:', error);
-        res.status(500).json({ message: 'Erro interno do servidor ao criar feedback.', error: error.message });
+        console.error('Error in createFeedback:', error);
+        next(error);
     }
 };
 

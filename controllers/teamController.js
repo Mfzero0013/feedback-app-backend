@@ -1,4 +1,4 @@
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../lib/prisma');
 const AppError = require('../utils/AppError');
 
 // Obter a equipe do usuário logado
@@ -55,6 +55,7 @@ exports.getMyTeam = async (req, res, next) => {
         });
 
     } catch (error) {
+        console.error('Error in getMyTeam:', error);
         next(error);
     }
 };
