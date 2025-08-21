@@ -21,17 +21,31 @@ const app = express();
 
 // Middlewares essenciais
 app.use(helmet());
-app.use(cors({
-    origin: [
+
+// Middleware manual para CORS
+app.use((req, res, next) => {
+    const allowedOrigins = [
         'http://localhost:8080',
         'http://127.0.0.1:8080',
         'https://feedback-app-frontend.onrender.com',
         'https://feedback-app-frontend-jmdf.onrender.com'
-    ],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    credentials: true,
-    allowedHeaders: "Content-Type, Authorization, X-Requested-With"
-}));
+    ];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', true);
+
+    // Intercepta requisições OPTIONS
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
 app.use(express.json());
 app.use(morgan('dev'));
 
