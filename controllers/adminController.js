@@ -23,20 +23,31 @@ exports.getAllUsers = async (req, res, next) => {
 exports.createUser = async (req, res, next) => {
     const { nome, email, senha, cargo, jobTitle, equipeId, status } = req.body;
     try {
+        if (!senha) {
+            return next(new AppError('A senha é obrigatória.', 400));
+        }
         const hashedPassword = await bcrypt.hash(senha, 10);
+
+        const finalEquipeId = equipeId ? parseInt(equipeId, 10) : null;
+        const finalCargo = cargo || 'COLABORADOR';
+        const finalStatus = status || 'ATIVO';
+
         const newUser = await prisma.user.create({
             data: {
                 nome,
                 email,
                 senha: hashedPassword,
-                cargo,
+                cargo: finalCargo,
                 jobTitle,
-                equipeId,
-                status,
+                equipeId: finalEquipeId,
+                status: finalStatus,
             },
         });
         res.status(201).json(newUser);
     } catch (error) {
+        if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
+            return next(new AppError('Este e-mail já está em uso.', 409));
+        }
         console.error('Error in createUser:', error);
         next(error);
     }
@@ -67,17 +78,25 @@ exports.createTeam = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
     const { id } = req.params;
-    const { nome, email, cargo, jobTitle, equipeId, status } = req.body;
+    const { nome, email, senha, cargo, jobTitle, equipeId, status } = req.body;
     try {
+        const hashedPassword = await bcrypt.hash(senha, 10);
+
+        // Garante que o equipeId seja um inteiro e define valores padrão
+        const finalEquipeId = equipeId ? parseInt(equipeId, 10) : null;
+        const finalCargo = cargo || 'COLABORADOR'; // Padrão para 'COLABORADOR'
+        const finalStatus = status || 'ATIVO'; // Padrão para 'ATIVO'
+
         const updatedUser = await prisma.user.update({
             where: { id: parseInt(id, 10) },
             data: {
                 nome,
                 email,
-                cargo,
+                senha: hashedPassword,
+                cargo: finalCargo,
                 jobTitle,
-                equipeId,
-                status,
+                equipeId: finalEquipeId,
+                status: finalStatus,
             },
         });
         res.json(updatedUser);
