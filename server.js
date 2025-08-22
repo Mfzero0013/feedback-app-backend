@@ -20,12 +20,11 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const app = express();
 
 // Configuração do CORS
-const corsOptions = {
-    origin: 'https://feedback-app-frontend-jmdf.onrender.com', // URL do seu frontend
-    optionsSuccessStatus: 200 // Para navegadores legados
-};
-
-app.use(cors(corsOptions));
+app.use(cors({
+    origin: 'https://feedback-app-frontend-jmdf.onrender.com', // Permite o domínio específico do frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Outros middlewares
 app.use(helmet());

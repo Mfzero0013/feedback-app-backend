@@ -17,17 +17,8 @@ exports.getGeneralReport = async (req, res, next) => {
         }
 
         const totalFeedbacks = await prisma.feedback.count({ where });
-        const feedbacksByStatus = await prisma.feedback.groupBy({
-            by: ['status'],
-            where,
-            _count: {
-                status: true,
-            },
-        });
-
         const report = {
             totalFeedbacks,
-            feedbacksByStatus,
         };
 
         res.status(200).json({ status: 'success', data: report });

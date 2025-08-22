@@ -19,10 +19,8 @@ exports.getMyTeam = async (req, res, next) => {
         if (!user.equipeId) {
             // Se o usuário não pertence a uma equipe, retorna uma resposta amigável
             return res.status(200).json({ 
-                data: {
-                    nome: 'Sem equipe',
-                    usuarios: []
-                }
+                status: 'success',
+                data: null // Indica que o usuário não tem equipe
             });
         }
 

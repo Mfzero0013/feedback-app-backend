@@ -2,7 +2,7 @@ const prisma = require('../lib/prisma');
 const AppError = require('../utils/AppError');
 
 // POST /api/feedback
-const createFeedback = async (req, res) => {
+const createFeedback = async (req, res, next) => {
     // O autor é identificado pelo middleware de autenticação e adicionado ao req.user
     const autorId = req.user.userId;
     const { titulo, conteudo, tipo, destinatarioId, anonimo } = req.body;
@@ -47,6 +47,36 @@ const createFeedback = async (req, res) => {
     }
 };
 
+const getFeedbacks = async (req, res, next) => {
+    const { type } = req.query; // 'received' ou 'sent'
+    const userId = req.user.userId;
+
+    let whereClause = {};
+    if (type === 'received') {
+        whereClause = { avaliadoId: userId };
+    } else if (type === 'sent') {
+        whereClause = { autorId: userId };
+    } else {
+        return next(new AppError('O tipo de feedback especificado é inválido.', 400));
+    }
+
+    try {
+        const feedbacks = await prisma.feedback.findMany({
+            where: whereClause,
+            include: {
+                autor: { select: { id: true, nome: true, cargo: true } },
+                avaliado: { select: { id: true, nome: true, cargo: true } },
+                tipo: { select: { nome: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        res.status(200).json({ data: feedbacks });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     createFeedback,
+    getFeedbacks,
 };

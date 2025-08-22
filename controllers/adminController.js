@@ -110,7 +110,7 @@ exports.getAllTeams = async (req, res, next) => {
                 membros: true, // Inclui a lista de membros
             },
         });
-        res.json(teams);
+        res.status(200).json({ status: 'success', data: teams });
     } catch (error) {
         console.error('Error in getAllTeams:', error);
         next(error);
@@ -134,6 +134,21 @@ exports.updateTeam = async (req, res, next) => {
         res.json(updatedTeam);
     } catch (error) {
         console.error('Error in updateTeam:', error);
+        next(error);
+    }
+};
+
+// Buscar todos os gestores
+exports.getManagers = async (req, res, next) => {
+    try {
+        const managers = await prisma.user.findMany({
+            where: {
+                cargo: 'GESTOR',
+            },
+        });
+        res.status(200).json({ status: 'success', data: managers });
+    } catch (error) {
+        console.error('Error in getManagers:', error);
         next(error);
     }
 };
