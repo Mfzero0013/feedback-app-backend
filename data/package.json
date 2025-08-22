@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Frontend assets for FeedbackHub",
   "scripts": {
-    "build:css": "tailwindcss -i ./html/css/input.css -o ./html/css/output.css --watch",
-    "build:icon": "svg-to-ico --in html/images/logo.svg --out html/images"
+    "build:css": "tailwindcss -i ../html/css/input.css -o ../html/css/output.css",
+    "build:icon": "svg-to-ico --in ../html/images/logo.svg --out ../html/images"
   },
   "devDependencies": {
     "svg-to-ico": "^1.0.1",

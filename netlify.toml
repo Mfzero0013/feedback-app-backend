@@ -1,0 +1,9 @@
+[build]
+  # Define o diretório base para o build.
+  base = "data/"
+
+  # Diretório que será publicado.
+  publish = "../html/"
+
+  # Comando para construir o projeto.
+  command = "npm install && npm run build:css && npm run build:icon"
