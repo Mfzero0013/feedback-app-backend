@@ -11,14 +11,6 @@ const createFeedback = async (req, res, next) => {
     }
 
     try {
-        const feedbackType = await prisma.feedbackType.findFirst({
-            where: { nome: { equals: tipo, mode: 'insensitive' } },
-        });
-
-        if (!feedbackType) {
-            return next(new AppError(`Tipo de feedback inválido: ${tipo}`, 400));
-        }
-
         const destinatario = await prisma.user.findUnique({ where: { id: destinatarioId } });
         if (!destinatario) {
             return next(new AppError('Usuário destinatário não encontrado.', 404));
@@ -27,8 +19,8 @@ const createFeedback = async (req, res, next) => {
         const newFeedback = await prisma.feedback.create({
             data: {
                 titulo,
-                descricao: descricao, // Corrigido para usar 'descricao'
-                tipoId: feedbackType.id,
+                descricao,
+                tipo, // Salva o texto livre
                 avaliadoId: destinatarioId,
                 autorId: anonimo ? null : autorId,
                 isAnonymous: anonimo,
@@ -62,7 +54,6 @@ const getFeedbacks = async (req, res, next) => {
             include: {
                 autor: { select: { id: true, nome: true, cargo: true } },
                 avaliado: { select: { id: true, nome: true, cargo: true } },
-                tipo: { select: { nome: true } },
             },
             orderBy: { createdAt: 'desc' },
         });

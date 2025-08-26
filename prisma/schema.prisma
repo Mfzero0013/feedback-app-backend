@@ -81,7 +81,7 @@ model Feedback {
   titulo       String
   descricao    String         @db.Text
   observacao   String?        @db.Text
-  tipoId       String
+  tipo         String
   status       FeedbackStatus @default(ABERTO)
   isAnonymous  Boolean        @default(false)
   score        Int?
@@ -93,7 +93,6 @@ model Feedback {
   equipe       Equipe?     @relation(fields: [equipeId], references: [id])
   autor        User?       @relation("CriadosPeloUsuario", fields: [autorId], references: [id])
   avaliado     User        @relation("RecebidosPeloUsuario", fields: [avaliadoId], references: [id])
-  tipo         FeedbackType @relation(fields: [tipoId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
