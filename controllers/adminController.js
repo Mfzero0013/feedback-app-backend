@@ -108,23 +108,21 @@ exports.updateUser = async (req, res, next) => {
 
 // Deletar um usuário
 exports.deleteUser = async (req, res, next) => {
-    const { id } = req.params;
-    const userId = parseInt(id, 10);
+    const { id } = req.params; // O ID é uma string (UUID)
 
     try {
         // Desvincula o usuário de qualquer equipe que ele gerencie
         await prisma.equipe.updateMany({
-            where: { gestorId: userId },
+            where: { gestorId: id },
             data: { gestorId: null },
         });
 
         // Agora, deleta o usuário
-        await prisma.user.delete({ where: { id: userId } });
+        await prisma.user.delete({ where: { id: id } });
 
         res.status(204).send();
     } catch (error) {
         console.error('Error in deleteUser:', error);
-        // Verifica se o erro é porque o usuário não foi encontrado
         if (error.code === 'P2025') {
             return next(new AppError('Usuário não encontrado.', 404));
         }
