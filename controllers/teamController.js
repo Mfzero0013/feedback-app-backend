@@ -19,7 +19,7 @@ exports.getMyTeam = async (req, res, next) => {
         let teamId = user.equipeId;
 
         // Se o usuário é um GESTOR e não está em uma equipe, busca a equipe que ele gerencia
-        if (!teamId && user.cargo === 'GESTOR') {
+        if (!teamId && (user.cargo === 'GESTOR' || user.cargo === 'ADMINISTRADOR')) {
             const managedTeam = await prisma.equipe.findFirst({
                 where: { gestorId: userId },
                 select: { id: true }
