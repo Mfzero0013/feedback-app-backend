@@ -22,21 +22,18 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Middleware para verificar as permissões necessárias
-const requirePermission = (requiredPermissions) => {
-  return (req, res, next) => {
-    if (!Array.isArray(requiredPermissions)) {
-      requiredPermissions = [requiredPermissions];
+const requirePermission = (requiredPermissions) => (req, res, next) => {
+    const userPermission = req.user?.cargo;
+    // Garante que requiredPermissions seja sempre um array para simplificar a lógica
+    const permissionsArray = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
+
+    // Se o usuário tiver uma das permissões necessárias, continua
+    if (userPermission && permissionsArray.includes(userPermission)) {
+        return next();
     }
 
-    // CORREÇÃO CRÍTICA: Usa 'perfil' do usuário, que vem do token JWT
-    const userProfile = req.user.cargo;
-
-    if (!requiredPermissions.includes(userProfile)) {
-      return res.status(403).json({ error: 'Acesso negado. Permissão insuficiente.', code: 'ACCESS_DENIED' });
-    }
-
-    next();
-  };
+    // Se não, retorna um erro de acesso negado
+    return next(new AppError('Acesso negado: permissão insuficiente.', 403));
 };
 
 // Placeholder para logs de auditoria

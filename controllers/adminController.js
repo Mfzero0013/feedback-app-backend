@@ -12,7 +12,7 @@ exports.getAllUsers = async (req, res, next) => {
                 equipe: true, // Inclui todos os dados da equipe relacionada
             },
         });
-        res.status(200).json({ status: 'success', data: users });
+        res.status(200).json(users);
     } catch (error) {
         console.error('Error in getAllUsers:', error);
         next(error);
