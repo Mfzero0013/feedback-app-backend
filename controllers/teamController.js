@@ -9,24 +9,37 @@ exports.getMyTeam = async (req, res, next) => {
         // 1. Encontra o usuário atual para obter o ID da sua equipe
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { equipeId: true }
+            select: { equipeId: true, role: true }
         });
 
         if (!user) {
             return next(new AppError('Usuário não encontrado.', 404));
         }
 
-        if (!user.equipeId) {
-            // Se o usuário não pertence a uma equipe, retorna uma resposta amigável
+        let teamId = user.equipeId;
+
+        // Se o usuário é um GESTOR e não está em uma equipe, busca a equipe que ele gerencia
+        if (!teamId && user.role === 'GESTOR') {
+            const managedTeam = await prisma.equipe.findFirst({
+                where: { gestorId: userId },
+                select: { id: true }
+            });
+            if (managedTeam) {
+                teamId = managedTeam.id;
+            }
+        }
+
+        if (!teamId) {
+            // Se ainda não há equipe, retorna uma resposta vazia
             return res.status(200).json({ 
                 status: 'success',
-                data: null // Indica que o usuário não tem equipe
+                data: null
             });
         }
 
         // 2. Busca a equipe e seus membros, incluindo o perfil de cada um
         const teamData = await prisma.equipe.findUnique({
-            where: { id: user.equipeId },
+            where: { id: teamId },
             include: {
                 membros: {
                     select: {

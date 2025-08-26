@@ -13,8 +13,8 @@ const createFeedback = async (req, res, next) => {
 
     try {
         // O frontend envia o NOME do tipo (ex: 'ELOGIO'), precisamos do ID.
-        const feedbackType = await prisma.feedbackType.findUnique({
-            where: { nome: tipo },
+        const feedbackType = await prisma.feedbackType.findFirst({
+            where: { nome: { equals: tipo, mode: 'insensitive' } },
         });
 
         if (!feedbackType) {
