@@ -18,8 +18,17 @@ exports.getMyTeam = async (req, res, next) => {
 
         let teamId = user.equipeId;
 
+        // Se o usuário for um administrador, retorna todos os usuários
+        if (user.cargo === 'ADMINISTRADOR') {
+            const allUsers = await prisma.user.findMany({
+                select: { id: true, nome: true, email: true, cargo: true, jobTitle: true }
+            });
+            // Para administradores, o nome da equipe será 'Administração' e os membros são todos os usuários
+            return res.status(200).json({ status: 'success', data: { nome: 'Administração', usuarios: allUsers } });
+        }
+
         // Se o usuário é um GESTOR e não está em uma equipe, busca a equipe que ele gerencia
-        if (!teamId && (user.cargo === 'GESTOR' || user.cargo === 'ADMINISTRADOR')) {
+        if (!teamId && user.cargo === 'GESTOR') {
             const managedTeam = await prisma.equipe.findFirst({
                 where: { gestorId: userId },
                 select: { id: true }
