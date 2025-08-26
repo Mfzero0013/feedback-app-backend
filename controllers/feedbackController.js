@@ -3,23 +3,19 @@ const AppError = require('../utils/AppError');
 
 // POST /api/feedback
 const createFeedback = async (req, res, next) => {
-    // O autor é identificado pelo middleware de autenticação e adicionado ao req.user
     const autorId = req.user.userId;
-    const { titulo, conteudo, tipo, destinatarioId, anonimo } = req.body;
+    const { titulo, descricao, tipo, destinatarioId, anonimo } = req.body;
 
-    if (!titulo || !conteudo || !tipo || !destinatarioId) {
+    if (!titulo || !descricao || !tipo || !destinatarioId) {
         return next(new AppError('Todos os campos obrigatórios devem ser preenchidos.', 400));
     }
 
     try {
-        // O frontend envia o NOME do tipo (ex: 'ELOGIO'), precisamos do ID.
         const feedbackType = await prisma.feedbackType.findFirst({
             where: { nome: { equals: tipo, mode: 'insensitive' } },
         });
 
         if (!feedbackType) {
-            // Se o tipo não existir, podemos criá-lo ou retornar um erro.
-            // Por segurança, vamos retornar um erro.
             return next(new AppError(`Tipo de feedback inválido: ${tipo}`, 400));
         }
 
@@ -31,7 +27,7 @@ const createFeedback = async (req, res, next) => {
         const newFeedback = await prisma.feedback.create({
             data: {
                 titulo,
-                descricao: conteudo,
+                descricao: descricao, // Corrigido para usar 'descricao'
                 tipoId: feedbackType.id,
                 avaliadoId: destinatarioId,
                 autorId: anonimo ? null : autorId,
