@@ -9,7 +9,7 @@ exports.getMyTeam = async (req, res, next) => {
         // 1. Encontra o usuário atual para obter o ID da sua equipe
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { equipeId: true, role: true }
+            select: { equipeId: true, cargo: true }
         });
 
         if (!user) {
@@ -19,7 +19,7 @@ exports.getMyTeam = async (req, res, next) => {
         let teamId = user.equipeId;
 
         // Se o usuário é um GESTOR e não está em uma equipe, busca a equipe que ele gerencia
-        if (!teamId && user.role === 'GESTOR') {
+        if (!teamId && user.cargo === 'GESTOR') {
             const managedTeam = await prisma.equipe.findFirst({
                 where: { gestorId: userId },
                 select: { id: true }
