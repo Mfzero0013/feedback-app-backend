@@ -84,7 +84,7 @@ model Feedback {
   tipo         String
   status       FeedbackStatus @default(ABERTO)
   isAnonymous  Boolean        @default(false)
-  score        Int?
+  nota         Int?
   equipeId     String?
 
   autorId      String?

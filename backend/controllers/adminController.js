@@ -4,6 +4,28 @@ const AppError = require('../utils/AppError');
 
 // Funções CRUD para Usuários
 
+// Buscar um usuário por ID
+exports.getUserById = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: id },
+            include: {
+                equipe: true,
+            },
+        });
+
+        if (!user) {
+            return next(new AppError('Usuário não encontrado.', 404));
+        }
+
+        res.status(200).json({ status: 'success', data: user });
+    } catch (error) {
+        console.error('Error in getUserById:', error);
+        next(error);
+    }
+};
+
 // Listar todos os usuários
 exports.getAllUsers = async (req, res, next) => {
     try {

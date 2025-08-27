@@ -7,7 +7,7 @@ exports.getGeneralReport = async (req, res, next) => {
         const { userId, feedbackType, startDate, endDate } = req.query;
         const where = {};
 
-        if (userId) where.autorId = userId;
+        if (userId) where.avaliadoId = userId;
         if (feedbackType) where.tipo = { nome: feedbackType };
         if (startDate && endDate) {
             where.createdAt = {
@@ -52,12 +52,12 @@ exports.getEngagementReport = async (req, res, next) => {
                 email: true,
                 _count: {
                     select: { 
-                        feedbacksCriados: { where: feedbackWhere } 
+                        feedbacksRecebidos: { where: feedbackWhere } 
                     },
                 },
             },
             orderBy: {
-                feedbacksCriados: {
+                feedbacksRecebidos: {
                     _count: 'desc',
                 },
             },

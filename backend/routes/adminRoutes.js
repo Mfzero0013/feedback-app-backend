@@ -12,6 +12,7 @@ router.get('/managers', requirePermission(['ADMINISTRADOR', 'GESTOR']), adminCon
 // Rotas para gerenciar Usuários
 // GESTOR pode listar usuários para selecionar um gestor para a nova equipe
 router.get('/manage-users', requirePermission(['ADMINISTRADOR', 'GESTOR']), adminController.getAllUsers);
+router.get('/users/:id', requirePermission('ADMINISTRADOR'), adminController.getUserById);
 router.post('/users', requirePermission('ADMINISTRADOR'), adminController.createUser);
 router.put('/users/:id', requirePermission('ADMINISTRADOR'), adminController.updateUser);
 router.delete('/users/:id', requirePermission('ADMINISTRADOR'), adminController.deleteUser);

@@ -87,5 +87,6 @@ function createMemberCard(member, teamName) {
 }
 
 function viewMemberDetails(memberId) {
-    window.location.href = `feedback.html?userId=${memberId}`;
+    // Redireciona para a página de perfil do usuário, passando o ID como parâmetro
+    window.location.href = `profile.html?userId=${memberId}`;
 }

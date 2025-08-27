@@ -101,7 +101,8 @@ function setupFeedbackForm() {
             destinatarioId: document.getElementById('avaliadoId').value,
             tipo: document.getElementById('tipo').value,
             descricao: document.getElementById('descricao').value.trim(),
-            anonimo: document.getElementById('isAnonymous').checked
+            anonimo: document.getElementById('isAnonymous').checked,
+            nota: document.getElementById('nota').value
         };
 
         try {

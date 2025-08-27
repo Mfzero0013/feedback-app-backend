@@ -4,7 +4,7 @@ const AppError = require('../utils/AppError');
 // POST /api/feedback
 const createFeedback = async (req, res, next) => {
     const autorId = req.user.userId;
-    const { titulo, descricao, tipo, destinatarioId, anonimo } = req.body;
+    const { titulo, descricao, tipo, destinatarioId, anonimo, nota } = req.body;
 
     if (!titulo || !descricao || !tipo || !destinatarioId) {
         return next(new AppError('Todos os campos obrigatórios devem ser preenchidos.', 400));
@@ -25,6 +25,7 @@ const createFeedback = async (req, res, next) => {
                 autorId: anonimo ? null : autorId,
                 isAnonymous: anonimo,
                 equipeId: destinatario.equipeId,
+                nota: nota ? parseInt(nota, 10) : null,
             },
         });
 
@@ -36,14 +37,25 @@ const createFeedback = async (req, res, next) => {
 };
 
 const getFeedbacks = async (req, res, next) => {
-    const { type } = req.query; // 'received' ou 'sent'
-    const userId = req.user.userId;
+    const { type, userId: queryUserId } = req.query; // 'received' ou 'sent'
+    const loggedInUserId = req.user.userId;
+    const userRole = req.user.role;
+
+    let targetUserId = loggedInUserId;
+
+    // Se um ID de usuário for fornecido na query e o usuário logado for ADMIN, use esse ID.
+    if (queryUserId && userRole === 'ADMIN') {
+        targetUserId = queryUserId;
+    } else if (queryUserId && queryUserId !== loggedInUserId) {
+        // Impede que usuários não-ADMIN vejam feedbacks de outros.
+        return next(new AppError('Você não tem permissão para visualizar os feedbacks de outro usuário.', 403));
+    }
 
     let whereClause = {};
     if (type === 'received') {
-        whereClause = { avaliadoId: userId };
+        whereClause = { avaliadoId: targetUserId };
     } else if (type === 'sent') {
-        whereClause = { autorId: userId };
+        whereClause = { autorId: targetUserId };
     } else {
         return next(new AppError('O tipo de feedback especificado é inválido.', 400));
     }
