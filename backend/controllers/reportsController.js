@@ -7,7 +7,9 @@ exports.getGeneralReport = async (req, res, next) => {
         const { userId, startDate, endDate } = req.query;
         const where = {};
 
-        if (userId) where.avaliadoId = userId;
+        if (userId) {
+            where.avaliadoId = userId;
+        }
         if (startDate && endDate) {
             where.createdAt = {
                 gte: new Date(startDate),
@@ -41,12 +43,15 @@ exports.getGeneralReport = async (req, res, next) => {
 exports.getEngagementReport = async (req, res, next) => {
     try {
         const { userId, startDate, endDate } = req.query;
-        const where = {};
+        const userWhere = {};
         if (userId) {
-            where.id = userId;
+            userWhere.id = userId;
         }
 
         const feedbackWhere = {};
+        if (userId) {
+            feedbackWhere.avaliadoId = userId;
+        }
         if (startDate && endDate) {
             feedbackWhere.createdAt = {
                 gte: new Date(startDate),
@@ -55,7 +60,7 @@ exports.getEngagementReport = async (req, res, next) => {
         }
 
         let users = await prisma.user.findMany({
-            where,
+            where: userWhere,
             select: {
                 id: true,
                 nome: true,

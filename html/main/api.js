@@ -94,6 +94,7 @@ const api = {
     getFeedbacks: (type) => api.get(`/feedback?type=${type}`), // 'received' ou 'sent'
     getFeedbacksForUser: (userId) => api.get(`/feedback?type=received&userId=${userId}`),
     sendFeedback: (feedbackData) => api.post('/feedback', feedbackData),
+    deleteFeedback: (feedbackId) => api.delete(`/feedback/${feedbackId}`),
 
     // --- Users (Admin) ---
     getManagers: () => api.get('/admin/managers'), // Adicionada a nova rota

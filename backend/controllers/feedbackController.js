@@ -4,14 +4,14 @@ const AppError = require('../utils/AppError');
 // POST /api/feedback
 const createFeedback = async (req, res, next) => {
     const autorId = req.user.userId;
-    const { titulo, descricao, tipo, destinatarioId, anonimo, nota } = req.body;
+    const { titulo, descricao, tipo, avaliadoId, isAnonymous, nota } = req.body;
 
-    if (!titulo || !descricao || !tipo || !destinatarioId) {
+    if (!titulo || !descricao || !tipo || !avaliadoId) {
         return next(new AppError('Todos os campos obrigatórios devem ser preenchidos.', 400));
     }
 
     try {
-        const destinatario = await prisma.user.findUnique({ where: { id: destinatarioId } });
+        const destinatario = await prisma.user.findUnique({ where: { id: avaliadoId } });
         if (!destinatario) {
             return next(new AppError('Usuário destinatário não encontrado.', 404));
         }
@@ -20,10 +20,10 @@ const createFeedback = async (req, res, next) => {
             data: {
                 titulo,
                 descricao,
-                tipo, // Salva o texto livre
-                avaliadoId: destinatarioId,
-                autorId: anonimo ? null : autorId,
-                isAnonymous: anonimo,
+                tipo,
+                avaliadoId: avaliadoId,
+                autorId: isAnonymous ? null : autorId,
+                isAnonymous: isAnonymous,
                 equipeId: destinatario.equipeId,
                 nota: nota ? parseInt(nota, 10) : null,
             },
@@ -75,7 +75,27 @@ const getFeedbacks = async (req, res, next) => {
     }
 };
 
+const deleteFeedback = async (req, res, next) => {
+    const { id } = req.params;
+
+    try {
+        const feedback = await prisma.feedback.findUnique({ where: { id } });
+
+        if (!feedback) {
+            return next(new AppError('Feedback não encontrado.', 404));
+        }
+
+        await prisma.feedback.delete({ where: { id } });
+
+        res.status(200).json({ message: 'Feedback excluído com sucesso!' });
+    } catch (error) {
+        console.error('Error in deleteFeedback:', error);
+        next(error);
+    }
+};
+
 module.exports = {
     createFeedback,
     getFeedbacks,
+    deleteFeedback,
 };

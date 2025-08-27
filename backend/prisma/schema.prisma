@@ -62,6 +62,7 @@ model User {
 
 model Equipe {
   id        String  @id @default(uuid())
+  status    String   @default("PENDENTE")
   nome      String  @unique
   descricao String?
   gestorId  String? @unique

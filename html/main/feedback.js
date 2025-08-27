@@ -29,11 +29,29 @@ async function loadFeedbackHistory(userId) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">${new Date(fb.createdAt).toLocaleDateString()}</td>
-                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${fb.tipo.nome}</span></td>
                     <td class="px-6 py-4 whitespace-nowrap">${fb.nota || 'N/A'}</td>
-                    <td class="px-6 py-4">${fb.conteudo}</td>
+                    <td class="px-6 py-4">${fb.descricao}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-red-600 hover:text-red-900 delete-feedback-btn" data-id="${fb.id}">Excluir</button>
+                    </td>
                 `;
                 historyBody.appendChild(row);
+            });
+
+            // Adiciona event listeners para os botões de exclusão
+            historyBody.querySelectorAll('.delete-feedback-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const feedbackId = e.target.dataset.id;
+                    if (confirm('Tem certeza que deseja excluir este feedback?')) {
+                        try {
+                            await api.deleteFeedback(feedbackId);
+                            showNotification('Feedback excluído com sucesso!', 'success');
+                            e.target.closest('tr').remove(); // Remove a linha da tabela
+                        } catch (error) {
+                            showNotification(error.message || 'Falha ao excluir o feedback.', 'error');
+                        }
+                    }
+                });
             });
         } else {
             historyBody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Nenhum feedback encontrado para este usuário.</td></tr>';
@@ -96,13 +114,14 @@ function setupFeedbackForm() {
             return;
         }
 
+        const notaValue = document.getElementById('nota').value;
         const feedbackData = {
+            avaliadoId: document.getElementById('avaliadoId').value,
             titulo: document.getElementById('titulo').value.trim(),
-            destinatarioId: document.getElementById('avaliadoId').value,
             tipo: document.getElementById('tipo').value,
+            nota: notaValue ? parseInt(notaValue, 10) : null,
             descricao: document.getElementById('descricao').value.trim(),
-            anonimo: document.getElementById('isAnonymous').checked,
-            nota: document.getElementById('nota').value
+            isAnonymous: document.getElementById('isAnonymous').checked
         };
 
         try {
