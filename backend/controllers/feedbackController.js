@@ -39,7 +39,7 @@ const createFeedback = async (req, res, next) => {
 const getFeedbacks = async (req, res, next) => {
     const { type, userId: queryUserId } = req.query; // 'received' ou 'sent'
     const loggedInUserId = req.user.userId;
-    const userRole = req.user.role;
+    const userRole = req.user.cargo;
 
     let targetUserId = loggedInUserId;
 
