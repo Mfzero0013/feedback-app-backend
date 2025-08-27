@@ -43,8 +43,9 @@ exports.getEngagementReport = async (req, res, next) => {
     try {
         const { userId, startDate, endDate } = req.query;
         const where = {};
-
-        if (userId) where.id = userId;
+        if (userId) {
+            where.id = userId;
+        }
 
         const feedbackWhere = {};
         if (startDate && endDate) {

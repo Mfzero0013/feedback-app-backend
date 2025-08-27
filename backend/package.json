@@ -2,6 +2,9 @@
   "name": "feedback-app-backend",
   "version": "1.0.0",
   "description": "Backend for the FeedbackHub application",
+  "prisma": {
+    "schema": "./prisma/schema.prisma"
+  },
   "main": "server.js",
   "scripts": {
     "start": "npx prisma migrate deploy && node server.js",
