@@ -4,28 +4,26 @@ const AppError = require('../utils/AppError');
 // POST /api/feedback
 const createFeedback = async (req, res, next) => {
     const autorId = req.user.userId;
-    const { titulo, descricao, tipo, avaliadoId, isAnonymous, nota } = req.body;
-
-    if (!titulo || !descricao || !tipo || !avaliadoId) {
-        return next(new AppError('Todos os campos obrigatórios devem ser preenchidos.', 400));
-    }
+    const { avaliado_id, tipo, categoria, conteudo, nota } = req.body;
 
     try {
-        const destinatario = await prisma.user.findUnique({ where: { id: avaliadoId } });
+        const destinatario = await prisma.user.findUnique({ where: { id: avaliado_id } });
         if (!destinatario) {
             return next(new AppError('Usuário destinatário não encontrado.', 404));
         }
 
         const newFeedback = await prisma.feedback.create({
             data: {
-                titulo,
-                descricao,
-                tipo,
-                avaliadoId: avaliadoId,
-                autorId: isAnonymous ? null : autorId,
-                isAnonymous: isAnonymous,
-                equipeId: destinatario.equipeId,
-                nota: nota ? parseInt(nota, 10) : null,
+                autorId: autorId,
+                avaliadoId: avaliado_id,
+                tipo: tipo,
+                categoria: categoria,
+                conteudo: conteudo,
+                nota: nota,
+            },
+            include: {
+                autor: { select: { id: true, nome: true, email: true } },
+                avaliado: { select: { id: true, nome: true, email: true } },
             },
         });
 
