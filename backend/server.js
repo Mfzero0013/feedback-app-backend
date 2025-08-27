@@ -20,34 +20,23 @@ const publicRoutes = require('./routes/publicRoutes');
 
 const app = express();
 
-// Configuração do CORS para permitir múltiplas origens
-const whitelist = [
-    'https://feedback-app-frontend-jmdf.onrender.com', // Frontend em produção
-    'http://localhost:8080', // Exemplo para desenvolvimento local
-    'http://127.0.0.1:5500' // Para Live Server do VSCode
-];
-
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Permite requisições sem 'origin' (como Postman ou apps mobile)
-        if (!origin || whitelist.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-};
-
-app.use(cors(corsOptions));
+// Simplifica a configuração do CORS para evitar problemas de deploy
+app.use(cors());
 
 // Outros middlewares
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); 
 app.use(morgan('dev'));
+
+// Servir arquivos estáticos da pasta 'html'
+const htmlPath = path.join(__dirname, '../html');
+app.use(express.static(htmlPath));
+
+// Rota para a página de login como página inicial
+app.get('/', (req, res) => {
+    res.sendFile(path.join(htmlPath, 'login.html'));
+});
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
