@@ -54,7 +54,7 @@ exports.getEngagementReport = async (req, res, next) => {
             };
         }
 
-        const userFeedbackCounts = await prisma.user.findMany({
+        let users = await prisma.user.findMany({
             where,
             select: {
                 id: true,
@@ -66,13 +66,13 @@ exports.getEngagementReport = async (req, res, next) => {
                     },
                 },
             },
-            orderBy: {
-                feedbacksRecebidos: {
-                    _count: 'desc',
-                },
-            },
-            take: 10,
         });
+
+        // Ordena os usuários pela contagem de feedbacks recebidos em ordem decrescente
+        users.sort((a, b) => (b._count.feedbacksRecebidos || 0) - (a._count.feedbacksRecebidos || 0));
+
+        // Pega os top 10 após a ordenação
+        const userFeedbackCounts = users.slice(0, 10);
 
         res.status(200).json({ status: 'success', data: userFeedbackCounts });
     } catch (error) {
