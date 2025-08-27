@@ -147,9 +147,9 @@ async function exportReport() {
         
         // General Report CSV
         csvContent += "Relatorio Geral\r\n";
-        csvContent += `Total de Feedbacks,${generalReport.data.totalFeedbacks}\r\n`;
+        csvContent += `Total de Feedbacks,${generalReport.totalFeedbacks}\r\n`;
         csvContent += "Status,Contagem\r\n";
-        generalReport.data.feedbacksByStatus.forEach(item => {
+        generalReport.feedbacksByStatus.forEach(item => {
             csvContent += `${item.status},${item._count.status}\r\n`;
         });
         csvContent += "\r\n";
