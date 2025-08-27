@@ -4,11 +4,10 @@ const AppError = require('../utils/AppError');
 // Gerar relatório geral de feedbacks
 exports.getGeneralReport = async (req, res, next) => {
     try {
-        const { userId, feedbackType, startDate, endDate } = req.query;
+        const { userId, startDate, endDate } = req.query;
         const where = {};
 
         if (userId) where.avaliadoId = userId;
-        if (feedbackType) where.tipo = { nome: feedbackType };
         if (startDate && endDate) {
             where.createdAt = {
                 gte: new Date(startDate),

@@ -126,11 +126,6 @@ function getReportFilters() {
     if (startDate) filters.startDate = startDate;
     if (endDate) filters.endDate = endDate;
 
-    // Pega o valor do tipo de feedback da tag ativa
-    const activeTag = document.querySelector('#feedback-type-tags .active-tag');
-    if (activeTag && activeTag.dataset.type) {
-        filters.feedbackType = activeTag.dataset.type;
-    }
 
     return filters;
 }
