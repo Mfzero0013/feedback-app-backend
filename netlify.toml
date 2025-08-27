@@ -7,3 +7,4 @@
 
   # Comando para construir o projeto.
   command = "npm install && npm run build:css && npm run build:icon"
+# Cache invalidation 2025-08-27T10:56
