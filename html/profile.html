@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - FeedbackHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/output.css">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen bg-gray-50">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-md flex-shrink-0">
+            <div class="p-6 flex items-center justify-center">
+                <img src="images/logo.svg" alt="FeedbackHub Logo" class="h-10">
+            </div>
+            <nav class="mt-6">
+                <a href="dashboard.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-100">
+                    <i class="fas fa-tachometer-alt w-6 text-center"></i>
+                    <span class="ml-4">Dashboard</span>
+                </a>
+                <a href="feedback.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-100">
+                    <i class="fas fa-comments w-6 text-center"></i>
+                    <span class="ml-4">Feedbacks</span>
+                </a>
+                <a href="team.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-100">
+                    <i class="fas fa-users w-6 text-center"></i>
+                    <span class="ml-4">Equipe</span>
+                </a>
+                <a href="reports.html" class="flex items-center px-4 py-2.5 text-gray-600 hover:bg-gray-200 rounded-md">
+                    <i class="fas fa-chart-line mr-3"></i> Relatórios
+                </a>
+                <a href="settings.html" class="flex items-center px-4 py-2.5 text-gray-600 hover:bg-gray-200 rounded-md">
+                    <i class="fas fa-cog mr-3"></i> Configurações
+                </a>
+                 <a href="admin.html" class="flex items-center px-6 py-3 text-gray-600 hover:bg-gray-100" data-permission="ADMIN">
+                    <i class="fas fa-cogs w-6 text-center"></i>
+                    <span class="ml-4">Administração</span>
+                </a>
+            </nav>
+            <div class="absolute bottom-0 w-full">
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-center">
+                        <img id="user-avatar-display" src="https://ui-avatars.com/api/?name=User&background=random&color=fff" alt="User Avatar" class="h-10 w-10 rounded-full object-cover">
+                        <div class="ml-3">
+                            <p id="user-name-display" class="text-sm font-semibold text-gray-800">Carregando...</p>
+                            <p id="user-role-display" class="text-xs text-gray-500">Carregando...</p>
+                        </div>
+                    </div>
+                    <button id="logout-button" class="mt-4 w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-md">
+                        <i class="fas fa-sign-out-alt w-6 text-center"></i>
+                        <span class="ml-2">Sair</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6 sm:p-8 overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-gray-800">Meu Perfil</h2>
+                <div>
+                    <button id="edit-profile-button" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Editar Perfil</button>
+                    <button id="save-profile-button" class="hidden bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">Salvar</button>
+                    <button id="cancel-edit-button" class="hidden bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 ml-2">Cancelar</button>
+                </div>
+            </div>
+
+            <!-- User Information Card -->
+            <div class="bg-white p-8 rounded-xl shadow-md max-w-4xl mx-auto">
+                <div id="profile-view">
+                    <div class="flex items-center space-x-6 mb-6">
+                        <img id="profile-avatar" src="https://i.pravatar.cc/150" class="w-24 h-24 rounded-full object-cover border-4 border-indigo-200">
+                        <div>
+                            <h3 id="profile-name" class="text-2xl font-bold text-gray-800">Carregando...</h3>
+                            <p id="profile-job-title" class="text-lg text-gray-600">...</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Email</label>
+                            <p id="profile-email" class="text-gray-900 font-semibold"></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Nível de Acesso</label>
+                            <p id="profile-role" class="text-gray-900 font-semibold"></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Equipe</label>
+                            <p id="profile-team" class="text-gray-900 font-semibold"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Edit Form -->
+                <div id="profile-edit" class="hidden">
+                     <form id="profile-form" class="space-y-4">
+                        <div class="flex items-center space-x-6 mb-6">
+                            <img id="edit-profile-avatar" src="https://i.pravatar.cc/150" class="w-24 h-24 rounded-full object-cover border-4 border-indigo-200">
+                            <div class="w-full">
+                                <div>
+                                    <label for="edit-profile-name" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                                    <input type="text" id="edit-profile-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div class="mt-4">
+                                    <label for="edit-profile-job-title" class="block text-sm font-medium text-gray-700">Seu Cargo</label>
+                                    <input type="text" id="edit-profile-job-title" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="main/api.js?v=1.1"></script>
+    <script src="main/profile.js?v=1.1"></script>
+    <script src="main/main.js?v=1.1"></script>
+</body>
+</html>

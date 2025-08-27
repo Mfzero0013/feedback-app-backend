@@ -1,0 +1,776 @@
+const express = require('express');
+const Joi = require('joi');
+const { runSelect, runSelectOne } = require('../config/database');
+const { requirePermission, auditLog } = require('../middleware/auth');
+
+const router = express.Router();
+
+// Schema de validação para filtros de relatórios
+const reportFilterSchema = Joi.object({
+  date_from: Joi.date().optional(),
+  date_to: Joi.date().optional(),
+  department: Joi.string().optional(),
+  user_id: Joi.number().integer().positive().optional(),
+  team_id: Joi.number().integer().positive().optional(),
+  type: Joi.string().valid('Desempenho', 'Comportamento', 'Projeto específico', '360°').optional(),
+  status: Joi.string().valid('Pendente', 'Em análise', 'Aprovado', 'Rejeitado').optional()
+});
+
+// GET /api/reports/dashboard - Relatório do dashboard
+router.get('/dashboard', requirePermission('reports'), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Estatísticas gerais do sistema
+    const generalStats = await runSelectOne(`
+      SELECT 
+        (SELECT COUNT(*) FROM users WHERE status = 'Ativo') as total_users,
+        (SELECT COUNT(*) FROM teams) as total_teams,
+        (SELECT COUNT(*) FROM feedbacks) as total_feedbacks,
+        (SELECT COUNT(*) FROM feedbacks WHERE status = 'Pendente') as pending_feedbacks,
+        (SELECT AVG(rating) FROM feedbacks WHERE rating IS NOT NULL) as avg_rating
+    `);
+    
+    // Estatísticas por departamento
+    const departmentStats = await runSelect(`
+      SELECT 
+        u.department,
+        COUNT(DISTINCT u.id) as user_count,
+        COUNT(f.id) as feedback_count,
+        AVG(f.rating) as avg_rating
+      FROM users u
+      LEFT JOIN feedbacks f ON (u.id = f.from_user_id OR u.id = f.to_user_id)
+      WHERE u.status = 'Ativo'
+      GROUP BY u.department
+      ORDER BY user_count DESC
+    `);
+    
+    // Estatísticas por tipo de feedback
+    const typeStats = await runSelect(`
+      SELECT 
+        type,
+        COUNT(*) as count,
+        AVG(rating) as avg_rating,
+        SUM(CASE WHEN status = 'Pendente' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'Aprovado' THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN status = 'Rejeitado' THEN 1 ELSE 0 END) as rejected
+      FROM feedbacks
+      GROUP BY type
+      ORDER BY count DESC
+    `);
+    
+    // Estatísticas por prioridade
+    const priorityStats = await runSelect(`
+      SELECT 
+        priority,
+        COUNT(*) as count,
+        AVG(rating) as avg_rating
+      FROM feedbacks
+      GROUP BY priority
+      ORDER BY 
+        CASE priority 
+          WHEN 'Crítica' THEN 1 
+          WHEN 'Alta' THEN 2 
+          WHEN 'Média' THEN 3 
+          WHEN 'Baixa' THEN 4 
+        END
+    `);
+    
+    // Estatísticas mensais (últimos 12 meses)
+    const monthlyStats = await runSelect(`
+      SELECT 
+        strftime('%Y-%m', created_at) as month,
+        COUNT(*) as feedback_count,
+        AVG(rating) as avg_rating
+      FROM feedbacks
+      WHERE created_at >= date('now', '-12 months')
+      GROUP BY strftime('%Y-%m', created_at)
+      ORDER BY month DESC
+      LIMIT 12
+    `);
+    
+    // Top usuários por feedbacks enviados
+    const topSenders = await runSelect(`
+      SELECT 
+        u.name,
+        u.department,
+        COUNT(f.id) as feedbacks_sent,
+        AVG(f.rating) as avg_rating
+      FROM users u
+      JOIN feedbacks f ON u.id = f.from_user_id
+      WHERE u.status = 'Ativo'
+      GROUP BY u.id, u.name, u.department
+      ORDER BY feedbacks_sent DESC
+      LIMIT 10
+    `);
+    
+    // Top usuários por feedbacks recebidos
+    const topReceivers = await runSelect(`
+      SELECT 
+        u.name,
+        u.department,
+        COUNT(f.id) as feedbacks_received,
+        AVG(f.rating) as avg_rating
+      FROM users u
+      JOIN feedbacks f ON u.id = f.to_user_id
+      WHERE u.status = 'Ativo'
+      GROUP BY u.id, u.name, u.department
+      ORDER BY feedbacks_received DESC
+      LIMIT 10
+    `);
+    
+    // Estatísticas pessoais (se aplicável)
+    let personalStats = null;
+    if (userRole === 'Usuário') {
+      personalStats = await runSelectOne(`
+        SELECT 
+          COUNT(*) as total_feedbacks,
+          SUM(CASE WHEN from_user_id = $1 THEN 1 ELSE 0 END) as sent_feedbacks,
+          SUM(CASE WHEN to_user_id = $1 THEN 1 ELSE 0 END) as received_feedbacks,
+          AVG(rating) as avg_rating,
+          SUM(CASE WHEN status = 'Pendente' THEN 1 ELSE 0 END) as pending_feedbacks
+        FROM feedbacks 
+        WHERE from_user_id = $1 OR to_user_id = $1
+      `, [userId]);
+    }
+    
+    // Estatísticas da equipe (se gestor)
+    let teamStats = null;
+    if (userRole === 'Gestor') {
+      teamStats = await runSelect(`
+        SELECT 
+          t.name as team_name,
+          COUNT(DISTINCT tm.user_id) as member_count,
+          COUNT(f.id) as feedback_count,
+          AVG(f.rating) as avg_rating
+        FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        LEFT JOIN feedbacks f ON (tm.user_id = f.from_user_id OR tm.user_id = f.to_user_id)
+        WHERE t.manager_id = $1
+        GROUP BY t.id, t.name
+        ORDER BY feedback_count DESC
+      `, [userId]);
+    }
+    
+    res.json({
+      general_stats: generalStats,
+      department_stats: departmentStats,
+      type_stats: typeStats,
+      priority_stats: priorityStats,
+      monthly_stats: monthlyStats,
+      top_senders: topSenders,
+      top_receivers: topReceivers,
+      personal_stats: personalStats,
+      team_stats: teamStats,
+      generated_at: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar relatório do dashboard:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// GET /api/reports/feedback - Relatório detalhado de feedbacks
+router.get('/feedback', requirePermission('reports'), async (req, res) => {
+  try {
+    const { error, value } = reportFilterSchema.validate(req.query);
+    if (error) {
+      return res.status(400).json({
+        error: 'Filtros inválidos',
+        details: error.details.map(detail => detail.message)
+      });
+    }
+    
+    const { date_from, date_to, department, user_id, team_id, type, status } = value;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Construir query base com permissões
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+    
+    // Usuários comuns só veem seus próprios feedbacks
+    if (userRole === 'Usuário') {
+      whereClause += ' AND (f.from_user_id = $1 OR f.to_user_id = $1)';
+      params.push(userId);
+    }
+    // Gestores veem feedbacks da sua equipe
+    else if (userRole === 'Gestor') {
+      whereClause += ` AND (
+        f.from_user_id = $1 OR f.to_user_id = $1 OR
+        f.from_user_id IN (
+          SELECT tm.user_id FROM team_members tm 
+          JOIN teams t ON tm.team_id = t.id 
+          WHERE t.manager_id = $1
+        ) OR
+        f.to_user_id IN (
+          SELECT tm.user_id FROM team_members tm 
+          JOIN teams t ON tm.team_id = t.id 
+          WHERE t.manager_id = $1
+        )
+      )`;
+      params.push(userId, userId);
+    }
+    // Administradores veem todos
+    
+    if (date_from) {
+      whereClause += ' AND DATE(f.created_at) >= $' + (params.length + 1);
+      params.push(date_from);
+    }
+    
+    if (date_to) {
+      whereClause += ' AND DATE(f.created_at) <= $' + (params.length + 1);
+      params.push(date_to);
+    }
+    
+    if (department) {
+      whereClause += ' AND (u1.department = $' + (params.length + 1) + ' OR u2.department = $' + (params.length + 1) + ')';
+      params.push(department, department);
+    }
+    
+    if (user_id) {
+      whereClause += ' AND (f.from_user_id = $' + (params.length + 1) + ' OR f.to_user_id = $' + (params.length + 1) + ')';
+      params.push(user_id, user_id);
+    }
+    
+    if (team_id) {
+      whereClause += ` AND (
+        f.from_user_id IN (
+          SELECT tm.user_id FROM team_members tm WHERE tm.team_id = $` + (params.length + 1) + `
+        ) OR
+        f.to_user_id IN (
+          SELECT tm.user_id FROM team_members tm WHERE tm.team_id = $` + (params.length + 1) + `
+        )
+      )`;
+      params.push(team_id, team_id);
+    }
+    
+    if (type) {
+      whereClause += ' AND f.type = $' + (params.length + 1);
+      params.push(type);
+    }
+    
+    if (status) {
+      whereClause += ' AND f.status = $' + (params.length + 1);
+      params.push(status);
+    }
+    
+    // Query para buscar feedbacks com informações detalhadas
+    const feedbacksSql = `
+      SELECT 
+        f.id, f.type, f.title, f.content, f.rating, f.status, f.priority, 
+        f.due_date, f.created_at, f.updated_at,
+        u1.id as from_user_id, u1.name as from_user_name, u1.department as from_user_department,
+        u2.id as to_user_id, u2.name as to_user_name, u2.department as to_user_department,
+        (SELECT COUNT(*) FROM feedback_comments fc WHERE fc.feedback_id = f.id) as comment_count
+      FROM feedbacks f
+      JOIN users u1 ON f.from_user_id = u1.id
+      JOIN users u2 ON f.to_user_id = u2.id
+      ${whereClause}
+      ORDER BY f.created_at DESC
+    `;
+    
+    const feedbacks = await runSelect(feedbacksSql, params);
+    
+    // Calcular estatísticas dos resultados filtrados
+    const statsSql = `
+      SELECT 
+        COUNT(*) as total_feedbacks,
+        SUM(CASE WHEN f.status = 'Pendente' THEN 1 ELSE 0 END) as pending_feedbacks,
+        SUM(CASE WHEN f.status = 'Em análise' THEN 1 ELSE 0 END) as analyzing_feedbacks,
+        SUM(CASE WHEN f.status = 'Aprovado' THEN 1 ELSE 0 END) as approved_feedbacks,
+        SUM(CASE WHEN f.status = 'Rejeitado' THEN 1 ELSE 0 END) as rejected_feedbacks,
+        AVG(f.rating) as avg_rating,
+        SUM(CASE WHEN f.priority = 'Crítica' THEN 1 ELSE 0 END) as critical_priority,
+        SUM(CASE WHEN f.priority = 'Alta' THEN 1 ELSE 0 END) as high_priority,
+        SUM(CASE WHEN f.priority = 'Média' THEN 1 ELSE 0 END) as medium_priority,
+        SUM(CASE WHEN f.priority = 'Baixa' THEN 1 ELSE 0 END) as low_priority
+      FROM feedbacks f
+      JOIN users u1 ON f.from_user_id = u1.id
+      JOIN users u2 ON f.to_user_id = u2.id
+      ${whereClause}
+    `;
+    
+    const stats = await runSelectOne(statsSql, params);
+    
+    // Análise por período
+    const periodAnalysis = await runSelect(`
+      SELECT 
+        strftime('%Y-%m', f.created_at) as month,
+        COUNT(*) as feedback_count,
+        AVG(f.rating) as avg_rating,
+        SUM(CASE WHEN f.status = 'Aprovado' THEN 1 ELSE 0 END) as approved_count
+      FROM feedbacks f
+      JOIN users u1 ON f.from_user_id = u1.id
+      JOIN users u2 ON f.to_user_id = u2.id
+      ${whereClause}
+      GROUP BY strftime('%Y-%m', f.created_at)
+      ORDER BY month DESC
+    `, params);
+    
+    res.json({
+      feedbacks,
+      stats,
+      period_analysis: periodAnalysis,
+      filters: { date_from, date_to, department, user_id, team_id, type, status },
+      generated_at: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar relatório de feedbacks:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// GET /api/reports/users - Relatório de usuários
+router.get('/users', requirePermission('reports'), async (req, res) => {
+  try {
+    const { department = '', role = '', status = '' } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Construir query base com permissões
+    let whereClause = 'WHERE u.status = $1';
+    let params = ['Ativo'];
+    
+    if (department) {
+      whereClause += ' AND u.department = $' + (params.length + 1);
+      params.push(department);
+    }
+    
+    if (role) {
+      whereClause += ' AND u.role = $' + (params.length + 1);
+      params.push(role);
+    }
+    
+    if (status) {
+      whereClause = 'WHERE u.status = $1';
+      params = [status];
+    }
+    
+    // Usuários comuns só veem informações básicas
+    if (userRole === 'Usuário') {
+      const userInfo = await runSelectOne(`
+        SELECT 
+          u.id, u.name, u.email, u.role, u.department, u.position, u.last_login,
+          COUNT(f.id) as total_feedbacks,
+          AVG(f.rating) as avg_rating
+        FROM users u
+        LEFT JOIN feedbacks f ON (u.id = f.from_user_id OR u.id = f.to_user_id)
+        WHERE u.id = $1
+        GROUP BY u.id
+      `, [userId]);
+      
+      return res.json({
+        user: userInfo,
+        generated_at: new Date().toISOString()
+      });
+    }
+    
+    // Query para buscar usuários com estatísticas
+    const usersSql = `
+      SELECT 
+        u.id, u.name, u.email, u.role, u.department, u.position, u.status, u.last_login, u.created_at,
+        COUNT(DISTINCT f.id) as total_feedbacks,
+        SUM(CASE WHEN f.from_user_id = u.id THEN 1 ELSE 0 END) as sent_feedbacks,
+        SUM(CASE WHEN f.to_user_id = u.id THEN 1 ELSE 0 END) as received_feedbacks,
+        AVG(f.rating) as avg_rating,
+        (SELECT COUNT(*) FROM team_members tm WHERE tm.user_id = u.id) as team_count
+      FROM users u
+      LEFT JOIN feedbacks f ON (u.id = f.from_user_id OR u.id = f.to_user_id)
+      ${whereClause}
+      GROUP BY u.id, u.name, u.email, u.role, u.department, u.position, u.status, u.last_login, u.created_at
+      ORDER BY u.name ASC
+    `;
+    
+    const users = await runSelect(usersSql, params);
+    
+    // Calcular estatísticas gerais
+    const generalStats = await runSelectOne(`
+      SELECT 
+        COUNT(*) as total_users,
+        SUM(CASE WHEN role = 'Administrador' THEN 1 ELSE 0 END) as admins,
+        SUM(CASE WHEN role = 'Gestor' THEN 1 ELSE 0 END) as managers,
+        SUM(CASE WHEN role = 'Usuário' THEN 1 ELSE 0 END) as regular_users,
+        COUNT(DISTINCT department) as total_departments,
+        AVG(CASE WHEN last_login IS NOT NULL THEN 1 ELSE 0 END) as active_users_ratio
+      FROM users u
+      ${whereClause}
+    `, params);
+    
+    // Análise por departamento
+    const departmentAnalysis = await runSelect(`
+      SELECT 
+        u.department,
+        COUNT(*) as user_count,
+        AVG(feedback_stats.avg_rating) as avg_rating,
+        SUM(feedback_stats.total_feedbacks) as total_feedbacks
+      FROM users u
+      LEFT JOIN (
+        SELECT 
+          user_id,
+          COUNT(*) as total_feedbacks,
+          AVG(rating) as avg_rating
+        FROM (
+          SELECT from_user_id as user_id, rating FROM feedbacks
+          UNION ALL
+          SELECT to_user_id as user_id, rating FROM feedbacks
+        )
+        GROUP BY user_id
+      ) feedback_stats ON u.id = feedback_stats.user_id
+      ${whereClause}
+      GROUP BY u.department
+      ORDER BY user_count DESC
+    `, params);
+    
+    // Análise de atividade
+    const activityAnalysis = await runSelect(`
+      SELECT 
+        CASE 
+          WHEN last_login IS NULL THEN 'Nunca logou'
+          WHEN last_login >= datetime('now', '-7 days') THEN 'Última semana'
+          WHEN last_login >= datetime('now', '-30 days') THEN 'Último mês'
+          WHEN last_login >= datetime('now', '-90 days') THEN 'Últimos 3 meses'
+          ELSE 'Mais de 3 meses'
+        END as activity_period,
+        COUNT(*) as user_count
+      FROM users u
+      ${whereClause}
+      GROUP BY activity_period
+      ORDER BY 
+        CASE activity_period
+          WHEN 'Última semana' THEN 1
+          WHEN 'Último mês' THEN 2
+          WHEN 'Últimos 3 meses' THEN 3
+          WHEN 'Mais de 3 meses' THEN 4
+          WHEN 'Nunca logou' THEN 5
+        END
+    `, params);
+    
+    res.json({
+      users,
+      general_stats: generalStats,
+      department_analysis: departmentAnalysis,
+      activity_analysis: activityAnalysis,
+      filters: { department, role, status },
+      generated_at: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar relatório de usuários:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// GET /api/reports/teams - Relatório de equipes
+router.get('/teams', requirePermission('reports'), async (req, res) => {
+  try {
+    const { manager_id = '' } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Construir query base com permissões
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+    
+    // Usuários comuns só veem equipes das quais fazem parte
+    if (userRole === 'Usuário') {
+      whereClause += ` AND t.id IN (
+        SELECT tm.team_id FROM team_members tm WHERE tm.user_id = $1
+      )`;
+      params.push(userId);
+    }
+    // Gestores veem suas equipes
+    else if (userRole === 'Gestor') {
+      whereClause += ` AND (
+        t.manager_id = $1 OR
+        t.id IN (
+          SELECT tm.team_id FROM team_members tm WHERE tm.user_id = $1
+        )
+      )`;
+      params.push(userId, userId);
+    }
+    // Administradores veem todas
+    
+    if (manager_id) {
+      whereClause += ' AND t.manager_id = $' + (params.length + 1);
+      params.push(manager_id);
+    }
+    
+    // Query para buscar equipes com estatísticas
+    const teamsSql = `
+      SELECT 
+        t.id, t.name, t.description, t.created_at,
+        u.id as manager_id, u.name as manager_name, u.department as manager_department,
+        (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as member_count,
+        (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id AND tm.role = 'Líder') as leader_count,
+        (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id AND tm.role = 'Especialista') as specialist_count
+      FROM teams t
+      JOIN users u ON t.manager_id = u.id
+      ${whereClause}
+      ORDER BY t.name ASC
+    `;
+    
+    const teams = await runSelect(teamsSql, params);
+    
+    // Calcular estatísticas gerais
+    const generalStats = await runSelectOne(`
+      SELECT 
+        COUNT(*) as total_teams,
+        COUNT(DISTINCT manager_id) as total_managers,
+        AVG(member_count) as avg_members_per_team,
+        SUM(member_count) as total_members
+      FROM (
+        SELECT t.id, t.manager_id, 
+               (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as member_count
+        FROM teams t
+        ${whereClause.replace('WHERE 1=1', 'WHERE 1=1')}
+      ) team_stats
+    `, params);
+    
+    // Análise de produtividade das equipes
+    const productivityAnalysis = await runSelect(`
+      SELECT 
+        t.id,
+        t.name as team_name,
+        COUNT(f.id) as feedback_count,
+        AVG(f.rating) as avg_rating,
+        SUM(CASE WHEN f.status = 'Aprovado' THEN 1 ELSE 0 END) as approved_feedbacks
+      FROM teams t
+      LEFT JOIN team_members tm ON t.id = tm.team_id
+      LEFT JOIN feedbacks f ON (tm.user_id = f.from_user_id OR tm.user_id = f.to_user_id)
+      ${whereClause}
+      GROUP BY t.id, t.name
+      ORDER BY feedback_count DESC
+    `, params);
+    
+    // Análise de distribuição de membros
+    const memberDistribution = await runSelect(`
+      SELECT 
+        tm.role as member_role,
+        COUNT(*) as count,
+        COUNT(DISTINCT tm.team_id) as teams_with_role
+      FROM team_members tm
+      JOIN teams t ON tm.team_id = t.id
+      ${whereClause}
+      GROUP BY tm.role
+      ORDER BY count DESC
+    `, params);
+    
+    res.json({
+      teams,
+      general_stats: generalStats,
+      productivity_analysis: productivityAnalysis,
+      member_distribution: memberDistribution,
+      filters: { manager_id },
+      generated_at: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar relatório de equipes:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// GET /api/reports/export/csv - Exportar relatório em CSV
+router.get('/export/csv', requirePermission('reports'), auditLog('EXPORT_REPORT_CSV'), async (req, res) => {
+  try {
+    const { report_type, ...filters } = req.query;
+    
+    if (!report_type || !['feedback', 'users', 'teams'].includes(report_type)) {
+      return res.status(400).json({
+        error: 'Tipo de relatório inválido',
+        code: 'INVALID_REPORT_TYPE'
+      });
+    }
+    
+    let data = [];
+    let filename = '';
+    
+    switch (report_type) {
+      case 'feedback':
+        // Implementar lógica de exportação de feedbacks
+        filename = `feedback_report_${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+        
+      case 'users':
+        // Implementar lógica de exportação de usuários
+        filename = `users_report_${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+        
+      case 'teams':
+        // Implementar lógica de exportação de equipes
+        filename = `teams_report_${new Date().toISOString().split('T')[0]}.csv`;
+        break;
+    }
+    
+    // Por enquanto, retornar dados em formato CSV simples
+    // Em produção, implementar geração real de arquivo CSV
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    res.send('Relatório exportado com sucesso');
+    
+  } catch (error) {
+    console.error('Erro ao exportar relatório:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+// GET /api/reports/performance - Relatório de performance
+router.get('/performance', requirePermission('reports'), async (req, res) => {
+  try {
+    const { period = 'monthly', user_id = '', team_id = '' } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Construir query base com permissões
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+    
+    // Usuários comuns só veem seus próprios dados
+    if (userRole === 'Usuário') {
+      whereClause += ' AND (f.from_user_id = ? OR f.to_user_id = ?)';
+      params.push(userId, userId);
+    }
+    // Gestores veem dados da sua equipe
+    else if (userRole === 'Gestor') {
+      whereClause += ` AND (
+        f.from_user_id = ? OR f.to_user_id = ? OR
+        f.from_user_id IN (
+          SELECT tm.user_id FROM team_members tm 
+          JOIN teams t ON tm.team_id = t.id 
+          WHERE t.manager_id = ?
+        ) OR
+        f.to_user_id IN (
+          SELECT tm.user_id FROM team_members tm 
+          JOIN teams t ON tm.team_id = t.id 
+          WHERE t.manager_id = ?
+        )
+      )`;
+      params.push(userId, userId, userId, userId);
+    }
+    
+    if (user_id) {
+      whereClause += ' AND (f.from_user_id = ? OR f.to_user_id = ?)';
+      params.push(user_id, user_id);
+    }
+    
+    if (team_id) {
+      whereClause += ` AND (
+        f.from_user_id IN (
+          SELECT tm.user_id FROM team_members tm WHERE tm.team_id = ?
+        ) OR
+        f.to_user_id IN (
+          SELECT tm.user_id FROM team_members tm WHERE tm.team_id = ?
+        )
+      )`;
+      params.push(team_id, team_id);
+    }
+    
+    let timeFormat = '';
+    let timeGroup = '';
+    
+    switch (period) {
+      case 'weekly':
+        timeFormat = '%Y-%W';
+        timeGroup = 'strftime(\'%Y-%W\', f.created_at)';
+        break;
+      case 'monthly':
+        timeFormat = '%Y-%m';
+        timeGroup = 'strftime(\'%Y-%m\', f.created_at)';
+        break;
+      case 'quarterly':
+        timeFormat = '%Y-Q%m';
+        timeGroup = 'strftime(\'%Y-Q%m\', f.created_at)';
+        break;
+      default:
+        timeFormat = '%Y-%m';
+        timeGroup = 'strftime(\'%Y-%m\', f.created_at)';
+    }
+    
+    // Análise de performance por período
+    const performanceAnalysis = await runSelect(`
+      SELECT 
+        ${timeGroup} as period,
+        COUNT(*) as total_feedbacks,
+        AVG(f.rating) as avg_rating,
+        SUM(CASE WHEN f.status = 'Aprovado' THEN 1 ELSE 0 END) as approved_count,
+        SUM(CASE WHEN f.status = 'Rejeitado' THEN 1 ELSE 0 END) as rejected_count,
+        SUM(CASE WHEN f.priority = 'Crítica' THEN 1 ELSE 0 END) as critical_count,
+        SUM(CASE WHEN f.priority = 'Alta' THEN 1 ELSE 0 END) as high_count
+      FROM feedbacks f
+      ${whereClause}
+      GROUP BY ${timeGroup}
+      ORDER BY period DESC
+      LIMIT 24
+    `, params);
+    
+    // Análise de competências (se disponível)
+    const competencyAnalysis = await runSelect(`
+      SELECT 
+        c.name as competency_name,
+        c.category,
+        AVG(cr.rating) as avg_rating,
+        COUNT(cr.id) as total_ratings
+      FROM competencies c
+      LEFT JOIN competency_ratings cr ON c.id = cr.competency_id
+      LEFT JOIN feedbacks f ON cr.feedback_id = f.id
+      ${whereClause}
+      GROUP BY c.id, c.name, c.category
+      HAVING total_ratings > 0
+      ORDER BY avg_rating DESC
+    `, params);
+    
+    // Análise de tendências
+    const trends = await runSelect(`
+      SELECT 
+        f.type,
+        ${timeGroup} as period,
+        COUNT(*) as count,
+        AVG(f.rating) as avg_rating
+      FROM feedbacks f
+      ${whereClause}
+      GROUP BY f.type, ${timeGroup}
+      ORDER BY period DESC, f.type
+      LIMIT 48
+    `, params);
+    
+    res.json({
+      performance_analysis: performanceAnalysis,
+      competency_analysis: competencyAnalysis,
+      trends,
+      period,
+      filters: { user_id, team_id },
+      generated_at: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Erro ao gerar relatório de performance:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      code: 'INTERNAL_ERROR'
+    });
+  }
+});
+
+module.exports = router;
+
