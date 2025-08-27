@@ -105,7 +105,7 @@ function renderEngagementReport(users) {
         return;
     }
 
-    let userListHTML = users.map(user => `<li>${user.nome} (${user._count.feedbacksCriados || 0} feedbacks)</li>`).join('');
+    let userListHTML = users.map(user => `<li>${user.nome} (${user._count.feedbacksRecebidos || 0} feedbacks)</li>`).join('');
 
     container.innerHTML = `
         <h3 class="text-lg font-semibold text-gray-700 mb-4">Top 10 Usuários Mais Engajados</h3>
@@ -156,9 +156,9 @@ async function exportReport() {
 
         // Engagement Report CSV
         csvContent += "Relatorio de Engajamento\r\n";
-        csvContent += "Usuario,Email,Feedbacks Criados\r\n";
-        engagementReport.data.forEach(user => {
-            csvContent += `${user.nome},${user.email},${user._count.feedbacksCriados}\r\n`;
+        csvContent += "Usuario,Email,Feedbacks Recebidos\r\n";
+        engagementReport.forEach(user => {
+            csvContent += `${user.nome},${user.email},${user._count.feedbacksRecebidos || 0}\r\n`;
         });
 
         const encodedUri = encodeURI(csvContent);
