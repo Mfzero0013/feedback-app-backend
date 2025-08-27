@@ -30,6 +30,27 @@ exports.getMe = async (req, res, next) => {
 };
 
 // Atualizar os dados do usuário logado
+exports.getUserProfile = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const user = await prisma.user.findUnique({
+            where: { id },
+            include: {
+                equipe: true,
+            },
+        });
+
+        if (!user) {
+            return next(new AppError('Usuário não encontrado.', 404, 'USER_NOT_FOUND'));
+        }
+
+        res.status(200).json({ status: 'success', data: user });
+    } catch (error) {
+        console.error('Error in getUserProfile:', error);
+        next(error);
+    }
+};
+
 exports.updateMe = async (req, res, next) => {
     try {
         const { nome, jobTitle } = req.body;

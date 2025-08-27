@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/profileController');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requirePermission } = require('../middleware/auth');
 
 // Todas as rotas aqui são para o usuário já autenticado
 router.use(authenticateToken);
@@ -11,5 +11,8 @@ router.get('/me', userController.getMe);
 
 // Rota para atualizar os dados do perfil do usuário logado
 router.patch('/me', userController.updateMe);
+
+// Rota para buscar o perfil de um usuário específico (apenas para admins)
+router.get('/:id', requirePermission('ADMINISTRADOR'), userController.getUserProfile);
 
 module.exports = router;
