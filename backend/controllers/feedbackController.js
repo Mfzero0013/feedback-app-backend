@@ -44,7 +44,7 @@ const getFeedbacks = async (req, res, next) => {
     let targetUserId = loggedInUserId;
 
     // Se um ID de usuário for fornecido na query e o usuário logado for ADMIN, use esse ID.
-    if (queryUserId && userRole === 'ADMIN') {
+    if (queryUserId && userRole === 'ADMINISTRADOR') {
         targetUserId = queryUserId;
     } else if (queryUserId && queryUserId !== loggedInUserId) {
         // Impede que usuários não-ADMIN vejam feedbacks de outros.
