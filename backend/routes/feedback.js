@@ -7,10 +7,12 @@ const router = express.Router();
 
 // Schema para criar feedback
 const createFeedbackSchema = Joi.object({
-  conteudo: Joi.string().min(10).required(),
+  titulo: Joi.string().optional(),
+  conteudo: Joi.string().required(),
   tipo: Joi.string().valid('ELOGIO', 'CRITICA', 'SUGESTAO').required(),
-  destinatarioId: Joi.string().uuid().required(),
-  anonimo: Joi.boolean().required()
+  avaliado_id: Joi.string().uuid().required(),
+  isAnonymous: Joi.boolean().required(),
+  nota: Joi.number().min(0).max(10).optional()
 });
 
 // Schema para atualizar status do feedback
@@ -27,20 +29,22 @@ router.post('/', requirePermission('send_feedback'), auditLog('SEND_FEEDBACK', '
     }
 
     const autorId = req.user.id;
-    const { conteudo, tipo, destinatarioId, anonimo } = value;
+    const { titulo, conteudo, tipo, avaliado_id, isAnonymous, nota } = value;
 
-    const destinatario = await prisma.user.findUnique({ where: { id: destinatarioId } });
+    const destinatario = await prisma.user.findUnique({ where: { id: avaliado_id } });
     if (!destinatario) {
       return res.status(404).json({ error: 'Usuário destinatário não encontrado', code: 'RECIPIENT_NOT_FOUND' });
     }
 
     const newFeedback = await prisma.feedback.create({
       data: {
+        titulo,
         conteudo,
         tipo,
-        anonimo,
+        nota,
+        isAnonymous,
         autor: { connect: { id: autorId } },
-        destinatario: { connect: { id: destinatarioId } },
+        avaliado: { connect: { id: avaliado_id } },
         equipe: destinatario.departamentoId ? { connect: { id: destinatario.departamentoId } } : undefined
       }
     });
