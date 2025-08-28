@@ -9,7 +9,7 @@ const router = express.Router();
 const createFeedbackSchema = Joi.object({
   titulo: Joi.string().optional(),
   conteudo: Joi.string().required(),
-  tipo: Joi.string().valid('ELOGIO', 'CRITICA', 'SUGESTAO').required(),
+  classificacao: Joi.string().valid('OTIMO', 'MEDIA', 'RUIM').required(),
   avaliado_id: Joi.string().uuid().required(),
   isAnonymous: Joi.boolean().required(),
   nota: Joi.number().min(0).max(10).optional()
@@ -29,7 +29,7 @@ router.post('/', requirePermission('send_feedback'), auditLog('SEND_FEEDBACK', '
     }
 
     const autorId = req.user.id;
-    const { titulo, conteudo, tipo, avaliado_id, isAnonymous, nota } = value;
+    const { titulo, conteudo, classificacao, avaliado_id, isAnonymous, nota } = value;
 
     const destinatario = await prisma.user.findUnique({ where: { id: avaliado_id } });
     if (!destinatario) {
@@ -40,7 +40,7 @@ router.post('/', requirePermission('send_feedback'), auditLog('SEND_FEEDBACK', '
       data: {
         titulo,
         conteudo,
-        tipo,
+        classificacao,
         nota,
         isAnonymous,
         autor: { connect: { id: autorId } },
@@ -177,10 +177,5 @@ router.put('/:id/status', requirePermission('manage_feedback'), auditLog('UPDATE
   }
 });
 
-// GET /api/feedback/types - Obter os tipos de feedback disponíveis
-router.get('/types', (req, res) => {
-  const feedbackTypes = ['ELOGIO', 'CRITICA', 'SUGESTAO'];
-  res.status(200).json(feedbackTypes);
-});
 
 module.exports = router;

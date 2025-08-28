@@ -80,9 +80,9 @@ model Equipe {
 model Feedback {
   id           String         @id @default(uuid())
   titulo       String
-  descricao    String         @db.Text
+  conteudo     String         @db.Text
   observacao   String?        @db.Text
-  tipo         String
+  classificacao String
   status       FeedbackStatus @default(ABERTO)
   isAnonymous  Boolean        @default(false)
   nota         Int?
