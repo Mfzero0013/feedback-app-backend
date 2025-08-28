@@ -177,4 +177,10 @@ router.put('/:id/status', requirePermission('manage_feedback'), auditLog('UPDATE
   }
 });
 
+// GET /api/feedback/types - Obter os tipos de feedback disponíveis
+router.get('/types', (req, res) => {
+  const feedbackTypes = ['ELOGIO', 'CRITICA', 'SUGESTAO'];
+  res.status(200).json(feedbackTypes);
+});
+
 module.exports = router;
