@@ -7,12 +7,17 @@ const sendEmail = require('../utils/email');
 // @access  Private
 const createFeedback = async (req, res, next) => {
   try {
-    const { titulo, descricao, observacao, tipo, isAnonymous, avaliadoId, equipeId } = req.body;
+    const { titulo, descricao, observacao, classificacao, isAnonymous, avaliadoId, equipeId } = req.body;
     const autorId = req.user.id;
     const prisma = getPrismaClient();
 
     // Validação básica
-    if (!titulo || !descricao || !tipo || !avaliadoId) {
+    if (!titulo || !descricao || !classificacao || !avaliadoId) {
+      return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos.' });
+    }
+
+    // Valida se a classificação é válida
+    if (!['OTIMO', 'MEDIA', 'RUIM'].includes(classificacao)) {
         return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos.' });
     }
 
@@ -20,7 +25,7 @@ const createFeedback = async (req, res, next) => {
         titulo,
         descricao,
         observacao,
-        tipo,
+        classificacao,
         isAnonymous: isAnonymous || false,
         avaliado: { connect: { id: avaliadoId } },
         // O autor só é conectado se o feedback não for anônimo
@@ -45,14 +50,14 @@ const createFeedback = async (req, res, next) => {
 // @access  Private
 const getAllFeedbacks = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, tipo, status, autorId, avaliadoId } = req.query;
+    const { page = 1, limit = 10, classificacao, status, autorId, avaliadoId } = req.query;
     const prisma = getPrismaClient();
     const user = req.user;
 
     const where = {};
 
     // Filtros de query
-    if (tipo) where.tipo = tipo;
+    if (classificacao) where.classificacao = classificacao;
     if (status) where.status = status;
     if (autorId) where.autorId = autorId;
     if (avaliadoId) where.avaliadoId = avaliadoId;

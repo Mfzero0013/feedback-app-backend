@@ -32,6 +32,12 @@ enum ReportType {
   USER_ENGAGEMENT
 }
 
+enum Classificacao {
+  OTIMO
+  MEDIA
+  RUIM
+}
+
 // MODELS
 model User {
   id                   String     @id @default(uuid())
@@ -82,7 +88,7 @@ model Feedback {
   titulo       String
   conteudo     String         @db.Text
   observacao   String?        @db.Text
-  classificacao String
+  classificacao Classificacao
   status       FeedbackStatus @default(ABERTO)
   isAnonymous  Boolean        @default(false)
   nota         Int?

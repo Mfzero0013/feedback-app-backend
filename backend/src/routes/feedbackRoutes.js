@@ -2,18 +2,19 @@ const express = require('express');
 const router = express.Router();
 const feedbackController = require('../controllers/feedbackController');
 const { protect, restrictTo } = require('../middlewares/auth');
-const { validateFeedback } = require('../validators/feedbackValidator');
+const { createFeedbackSchema, updateFeedbackStatusSchema } = require('../validators/feedbackValidators');
+const validate = require('../middlewares/validate');
 
 // A partir daqui, todas as rotas são protegidas
 router.use(protect);
 
 router.route('/')
-    .post(validateFeedback, feedbackController.createFeedback)
+    .post(validate(createFeedbackSchema), feedbackController.createFeedback)
     .get(feedbackController.getAllFeedbacks);
 
 router.route('/:id')
     .get(feedbackController.getFeedbackById)
-    .patch(restrictTo('ADMINISTRADOR', 'GESTOR'), feedbackController.updateFeedbackStatus)
+    .patch(restrictTo('ADMINISTRADOR', 'GESTOR'), validate(updateFeedbackStatusSchema), feedbackController.updateFeedbackStatus)
     .delete(restrictTo('ADMINISTRADOR'), feedbackController.deleteFeedback);
 
 // Rota para um usuário ver os feedbacks que criou
