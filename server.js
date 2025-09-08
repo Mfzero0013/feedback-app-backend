@@ -1,0 +1,55 @@
+require('dotenv').config();
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
+const path = require('path');
+
+// Importa as rotas refatoradas
+const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
+const teamRoutes = require('./routes/team');
+const feedbackRoutes = require('./routes/feedbackRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+
+const app = express();
+
+// Middlewares essenciais
+// Configuração de CORS para permitir todas as origens em desenvolvimento
+// Configuração de CORS para permitir o frontend
+app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.use(express.json());
+app.use(morgan('dev'));
+
+// Servir arquivos estáticos do frontend
+app.use(express.static(path.join(__dirname, '..', 'html')));
+
+// Rotas da API
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
+
+// Rota para checar a saúde da API
+app.get('/api/status', (req, res) => {
+  res.send('FeedbackHub API is running!');
+});
+
+// Middleware de tratamento de erros (deve ser o último)
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5003;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

@@ -1,0 +1,135 @@
+const express = require('express');
+const Joi = require('joi');
+const prisma = require('../src/lib/prisma');
+const { auditLog } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/permissions');
+
+const router = express.Router();
+
+const teamSchema = Joi.object({
+  nome: Joi.string().min(3).max(100).required(),
+  descricao: Joi.string().allow('', null)
+});
+
+// GET /api/teams - Listar todos os departamentos
+router.get('/', requirePermission('view_teams'), async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    const where = {
+      OR: [
+        { nome: { contains: search, mode: 'insensitive' } },
+        { descricao: { contains: search, mode: 'insensitive' } }
+      ]
+    };
+
+    const departments = await prisma.department.findMany({
+      where,
+      skip: offset,
+      take: parseInt(limit),
+      orderBy: { nome: 'asc' },
+      include: { _count: { select: { users: true } } }
+    });
+
+    const total = await prisma.department.count({ where });
+
+    res.json({
+      teams: departments.map(d => ({ ...d, members_count: d._count.users })),
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao listar departamentos:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// GET /api/teams/:id - Obter um departamento
+router.get('/:id', requirePermission('view_teams'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const department = await prisma.department.findUnique({
+      where: { id },
+      include: { users: { select: { id: true, nome: true, email: true } } }
+    });
+
+    if (!department) {
+      return res.status(404).json({ error: 'Departamento não encontrado', code: 'TEAM_NOT_FOUND' });
+    }
+
+    res.json(department);
+  } catch (error) {
+    console.error('Erro ao obter departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// POST /api/teams - Criar um novo departamento
+router.post('/', requirePermission('manage_teams'), auditLog('CREATE_TEAM', 'departments'), async (req, res) => {
+  try {
+    const { error, value } = teamSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: 'Dados inválidos', details: error.details.map(d => d.message) });
+    }
+
+    const newDepartment = await prisma.department.create({ data: value });
+    res.status(201).json(newDepartment);
+  } catch (error) {
+    console.error('Erro ao criar departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// PUT /api/teams/:id - Atualizar um departamento
+router.put('/:id', requirePermission('manage_teams'), auditLog('UPDATE_TEAM', 'departments', 'id'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error, value } = teamSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: 'Dados inválidos', details: error.details.map(d => d.message) });
+    }
+
+    const updatedDepartment = await prisma.department.update({
+      where: { id },
+      data: value
+    });
+
+    res.json(updatedDepartment);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Departamento não encontrado', code: 'TEAM_NOT_FOUND' });
+    }
+    console.error('Erro ao atualizar departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+// DELETE /api/teams/:id - Remover um departamento
+router.delete('/:id', requirePermission('manage_teams'), auditLog('DELETE_TEAM', 'departments', 'id'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const usersInDept = await prisma.user.count({ where: { departamentoId: id } });
+    if (usersInDept > 0) {
+      return res.status(400).json({ error: 'Não é possível remover um departamento com membros associados.', code: 'TEAM_NOT_EMPTY' });
+    }
+
+    await prisma.department.delete({ where: { id } });
+    res.status(204).send();
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Departamento não encontrado', code: 'TEAM_NOT_FOUND' });
+    }
+    console.error('Erro ao remover departamento:', error);
+    res.status(500).json({ error: 'Erro interno do servidor', code: 'INTERNAL_ERROR' });
+  }
+});
+
+module.exports = router;
+
+
