@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 const prisma = require('../config/database');
+=======
+const prisma = require('../lib/prisma');
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 const AppError = require('../utils/AppError');
 
 exports.getDashboardStats = async (req, res, next) => {
   try {
+<<<<<<< HEAD
     const userId = req.user.id;
+=======
+    const userId = req.user.userId;
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 
     // 1. Contar feedbacks pendentes (status 'ABERTO')
     const feedbacksAbertos = await prisma.feedback.count({
@@ -39,7 +47,11 @@ exports.getDashboardStats = async (req, res, next) => {
         where: {
           equipeId: user.equipeId,
           id: {
+<<<<<<< HEAD
             not: userId,
+=======
+            not: userId, // Excluir o próprio usuário da contagem
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
           },
         },
       });
@@ -54,6 +66,11 @@ exports.getDashboardStats = async (req, res, next) => {
       },
     });
   } catch (error) {
+<<<<<<< HEAD
     next(new AppError('Não foi possível buscar as estatísticas do dashboard.', 500));
+=======
+    console.error('Error in getDashboardStats:', error);
+    next(error);
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
   }
 };

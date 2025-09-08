@@ -22,6 +22,7 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Middleware para verificar as permissões necessárias
+<<<<<<< HEAD
 const requirePermission = (requiredPermissions) => {
   return (req, res, next) => {
     if (!Array.isArray(requiredPermissions)) {
@@ -37,6 +38,20 @@ const requirePermission = (requiredPermissions) => {
 
     next();
   };
+=======
+const requirePermission = (requiredPermissions) => (req, res, next) => {
+    const userPermission = req.user?.cargo;
+    // Garante que requiredPermissions seja sempre um array para simplificar a lógica
+    const permissionsArray = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
+
+    // Se o usuário tiver uma das permissões necessárias, continua
+    if (userPermission && permissionsArray.includes(userPermission)) {
+        return next();
+    }
+
+    // Se não, retorna um erro de acesso negado
+    return next(new AppError('Acesso negado: permissão insuficiente.', 403));
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 };
 
 // Placeholder para logs de auditoria

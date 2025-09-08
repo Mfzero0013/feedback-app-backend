@@ -4,7 +4,11 @@
   "description": "Backend for the FeedbackHub application",
   "main": "server.js",
   "scripts": {
+<<<<<<< HEAD
     "start": "node server.js",
+=======
+    "start": "npx prisma migrate deploy && node server.js",
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
     "dev": "nodemon server.js",
     "build": "npm install && npx prisma generate && npx prisma migrate deploy"
   },

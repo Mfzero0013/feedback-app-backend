@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+=======
+const prisma = require('../lib/prisma');
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
@@ -79,6 +83,10 @@ const registerUser = async (req, res, next) => {
         res.status(201).json({ message: 'Usuário cadastrado com sucesso!', user: userWithoutPassword });
 
     } catch (err) {
+<<<<<<< HEAD
+=======
+        console.error('Error during user registration:', err);
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
         return next(new AppError('Não foi possível concluir o cadastro. Por favor, tente novamente mais tarde.', 500, 'INTERNAL_ERROR'));
     }
 };
@@ -138,6 +146,10 @@ const loginUser = async (req, res, next) => {
       },
     });
   } catch (err) {
+<<<<<<< HEAD
+=======
+    console.error('Error during user login:', err);
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
     return next(new AppError('Não foi possível fazer o login. Por favor, tente novamente mais tarde.', 500, 'INTERNAL_ERROR'));
   }
 };

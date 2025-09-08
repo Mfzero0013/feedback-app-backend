@@ -81,7 +81,11 @@ model Feedback {
   titulo       String
   descricao    String         @db.Text
   observacao   String?        @db.Text
+<<<<<<< HEAD
   tipoId       String
+=======
+  tipo         String
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
   status       FeedbackStatus @default(ABERTO)
   isAnonymous  Boolean        @default(false)
   score        Int?
@@ -93,7 +97,10 @@ model Feedback {
   equipe       Equipe?     @relation(fields: [equipeId], references: [id])
   autor        User?       @relation("CriadosPeloUsuario", fields: [autorId], references: [id])
   avaliado     User        @relation("RecebidosPeloUsuario", fields: [avaliadoId], references: [id])
+<<<<<<< HEAD
   tipo         FeedbackType @relation(fields: [tipoId], references: [id])
+=======
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -110,6 +117,7 @@ model Report {
   createdAt DateTime @default(now())
 }
 
+<<<<<<< HEAD
 model FeedbackType {
   id        String     @id @default(uuid())
   nome      String     @unique
@@ -119,6 +127,8 @@ model FeedbackType {
   updatedAt DateTime @updatedAt
 }
 
+=======
+>>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 model SystemSettings {
   id    String @id @default(uuid())
   key   String @unique
