@@ -1,22 +1,14 @@
 require('dotenv').config();
 
-<<<<<<< HEAD
+console.log('--- SERVER STARTING - PRODUCTION VERSION ---');
 const express = require('express');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const path = require('path');
 const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
 const compression = require('compression');
-const path = require('path');
-=======
-console.log('--- SERVER STARTING - DEPLOY VERSION 8 ---');
-const express = require('express');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const path = require('path');
-const cors = require('cors'); // Importa o pacote cors
->>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 
-// Importa as rotas refatoradas
+// Importa as rotas
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const teamRoutes = require('./routes/team');
@@ -24,56 +16,30 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const profileRoutes = require('./routes/profileRoutes');
-<<<<<<< HEAD
-
-const app = express();
-
-// Middlewares essenciais
-// Configuração de CORS para permitir todas as origens em desenvolvimento
-// Configuração de CORS para permitir o frontend
-app.use(cors());
-app.use(helmet());
-app.use(compression());
-app.use(express.json());
-app.use(morgan('dev'));
-
-// Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '..', 'html')));
-=======
 const reportsRoutes = require('./routes/reportsRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 
 const app = express();
 
-// Configuração do CORS para permitir múltiplas origens
-const whitelist = [
-    'https://feedback-app-frontend-jmdf.onrender.com', // Frontend em produção
-    'http://localhost:8080', // Exemplo para desenvolvimento local
-    'http://127.0.0.1:5500' // Para Live Server do VSCode
-];
-
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Permite requisições sem 'origin' (como Postman ou apps mobile)
-        if (!origin || whitelist.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+// Configuração de CORS para produção
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'https://feedback-app-frontend-jmdf.onrender.com',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
-};
+}));
 
-app.use(cors(corsOptions));
-
-// Outros middlewares
+// Middlewares essenciais
 app.use(helmet());
+app.use(compression());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
-app.use(morgan('dev'));
->>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan('combined')); // Usando 'combined' para produção
+
+// Servir arquivos estáticos (se necessário)
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/build')));
+}
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
@@ -83,11 +49,8 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
-<<<<<<< HEAD
-=======
 app.use('/api/reports', reportsRoutes);
 app.use('/api/public', publicRoutes);
->>>>>>> ba508e88f0c67f5523382fe5ed8f61e1c86f97c6
 
 // Rota para checar a saúde da API
 app.get('/api/status', (req, res) => {
@@ -98,8 +61,36 @@ app.get('/api/status', (req, res) => {
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
+// Configuração da porta
 const PORT = process.env.PORT || 5003;
 
-app.listen(PORT, () => {
+// Rota para verificação de saúde
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Rota para servir o frontend em produção
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  });
+}
+
+// Iniciar o servidor
+const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Tratamento de erros não capturados
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection! Shutting down...');
+  console.error(err);
+  server.close(() => {
+    process.exit(1);
+  });
 });
